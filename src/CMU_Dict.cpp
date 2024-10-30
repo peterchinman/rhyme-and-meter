@@ -1,7 +1,9 @@
 #include "CMU_Dict.h"
+#include "convenience.h"
 
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -10,7 +12,7 @@
 
 
 bool CMU_Dict::import_dictionary() {
-    const std::string file_path{"../../data/cmudict-0.7b"};
+    const std::string file_path{"/Users/peterchinman/Documents/0B-Coding/00_projects/rhyme-and-meter/data/cmudict-0.7b"};
     std::ifstream cmudict{file_path};
     if (!cmudict.is_open()) {
         std::cerr << "Failed to open the dictionary." << '\n';
@@ -18,6 +20,7 @@ bool CMU_Dict::import_dictionary() {
     }
     std::string line;
     while (std::getline(cmudict, line)) {
+        // ignore leading ;
         if(line.empty() || line[0] == ';') {
             continue;
         }
@@ -30,20 +33,20 @@ bool CMU_Dict::import_dictionary() {
 
         // strip variation "(n)", used in CMU DICT for multiple entries of same word
         // instead each pronunciation is added to the vector m_dictionary[word]
-        std::size_t pos = word.find('(');
-        if (pos != std::string::npos && pos!= 0) {
-            word = word.substr(0, pos);
+        if (word.back() == ')'){
+            word.pop_back();
+            word.pop_back();
+            word.pop_back();
         }
-
-        // extract pronunciation
+       
         // pronunciation is ARPABET symbols, separated by spaces
-        // TODO: consider whether this should instead be an array
         // vowels end with a number indicating stress, 0 no stress, 1 primary stress, 2 secondary stress
         std::string pronunciation;
         std::getline(iss, pronunciation);
 
-        // remove two leading spaces
-        pronunciation = pronunciation.substr(2);
+        // trim white space
+        ltrim(pronunciation);
+        rtrim(pronunciation);
 
         m_dictionary[word].push_back(pronunciation);
     }
@@ -52,38 +55,166 @@ bool CMU_Dict::import_dictionary() {
     return true;
 }
 
-// throws a std::exception if query not found
-std::vector<std::string> CMU_Dict::search_dictionary(std::string query) {
+// throws a std::exception if word not found
+std::vector<std::string> CMU_Dict::find_phones(std::string word) {
     // capitalize all queries
-    std::transform(query.begin(), query.end(), query.begin(), ::toupper);
-    auto it = m_dictionary.find(query);
+    std::transform(word.begin(), word.end(), word.begin(), ::toupper);
+    auto it = m_dictionary.find(word);
     if (it != m_dictionary.end()) {
         return it->second;
     }
     else {
-        throw std::runtime_error(query + " not found in dictionary.");
+        throw std::runtime_error(word + " not found in dictionary.");
     }
 }
 
-// vowels in cmudict end with a number as an accent indicator
-// we *could* just use that in this function as an indicator that a symbol is a vowel
-// instead here we strip the digit and then check against a list of vowels
-// is that helpfully robust, or just an extra step? you tell me
-int CMU_Dict::countVowels(const std::string& pronunciation) {
-    std::istringstream iss(pronunciation);
-    std::string symbol;
-    int vowel_count{};
+std::vector<std::pair<std::vector<std::string>, bool>> CMU_Dict::text_to_phones(const std::string & text) {
+    std::vector<std::pair<std::vector<std::string>, bool>> results{};
+    std::vector<std::string> words {strip_punctuation(text)};
 
-    while (iss >> symbol) {
-        
-        if (!symbol.empty() && std::isdigit(symbol.back())) {
-            symbol.pop_back();
-        }
-
-        if(CMU_VOWELS.find(symbol) != CMU_VOWELS.end()) {
-            ++vowel_count;
+    for (const auto & w : words) {
+        try {
+            std::vector<std::string> phones{find_phones(w)};
+            results.emplace_back(phones, true);
+        } catch (const std::exception &) {
+            results.emplace_back(std::vector<std::string>{}, false);
         }
     }
 
-    return vowel_count;
+    return results;
+}
+
+
+std::string CMU_Dict::phone_stresses(const std::string& phones) {
+    std::string stresses{};
+    for (const auto & c : phones){
+        if (c == '0' || c == '1' || c == '2') {
+            stresses.push_back(c);
+        }
+    }
+    return stresses;
+}
+
+std::vector<std::string> CMU_Dict::word_to_stresses(const std::string& word) {
+    std::vector<std::string> stresses{};
+
+    std::vector<std::string> phones{find_phones(word)};
+    for (const auto & p : phones) {
+        stresses.emplace_back(phone_stresses(p));
+    }
+    return stresses;
+}
+
+int CMU_Dict::phone_syllables(const std::string& phones) {
+    return static_cast<int>(phone_stresses(phones).length());
+}
+
+std::vector<int> CMU_Dict::word_to_syllables(const std::string& word) {
+    std::vector<int> syllables;
+    std::vector<std::string> phones{find_phones(word)};
+    for(const auto & p : phones) {
+        syllables.emplace_back(phone_syllables(p));
+    }
+    return syllables;
+}
+
+std::vector<bool> CMU_Dict::meter_to_binary(const std::string& meter){
+    std::vector<bool> binary{};
+
+    for(const auto& c : meter){
+        if (std::isspace(static_cast<unsigned char>(c))) continue;
+        if (c == 'x') binary.emplace_back(0);
+        if (c == '/') binary.emplace_back(1);
+    }
+
+    return binary;
+}
+
+std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_set(const std::string& meter){
+    std::set<std::vector<int>> meters_set;
+
+    std::vector<int> main_path{};
+    std::vector<std::pair<std::vector<int>, bool>> optional_paths{std::make_pair(std::vector<int>{}, true)};
+    bool in_optional{false};
+    int optional_index{0};
+
+    for(const auto& c : meter){
+        if (std::isspace(static_cast<unsigned char>(c))) continue;
+
+        if (c == 'x'){
+            if (in_optional){
+                for (auto & path : optional_paths){
+                    if (path.second == true) {
+                        path.first.emplace_back(0);
+                    }
+                }
+            }
+            else{
+                main_path.emplace_back(0);
+                for (auto & path : optional_paths) {
+                    path.first.emplace_back(0);
+                }
+            }
+        }
+        else if (c == '/'){
+            if (in_optional){
+                for (auto & path : optional_paths){
+                    if (path.second == true) {
+                        path.first.emplace_back(1);
+                    }
+                }
+            }
+            else{
+                main_path.emplace_back(1);
+                for (auto & path : optional_paths) {
+                    path.first.emplace_back(1);
+                }
+            }
+        }
+        else if (c == '(') {
+            // mark yes we're in optional path
+            in_optional = true;
+            // copy all the current optional paths, setting their bool flag to true
+            // so that every optional path we come to, we take all routes
+            // but only copy all paths if our initial optional path is not empty
+            if ((optional_paths.size() == 1) && (optional_paths[0].first.empty())) {
+                continue;
+            }
+            else {
+                for(auto & path : optional_paths) {
+                    optional_paths.emplace_back(path.first, true);
+                }
+            }
+            
+        }
+        else if(c == ')') {
+            in_optional = false;
+            // set all optional paths bool flags to false
+            for(auto & path : optional_paths) {
+                path.second = false;
+            }
+        }
+    }
+
+    meters_set.insert(main_path);
+    for(const auto & path : optional_paths) {
+        meters_set.insert(path.first);
+    }
+
+    return meters_set;
+}
+
+bool CMU_Dict::check_meter_validity(const std::string& text, const std::string& meter) {
+    std::vector<std::vector<std::string>> phones_from_text{};
+
+    
+
+    // step thru phones_from_text
+    // for each variation of each word
+        // if variation has same binary meter as previous, skip
+            // so we're only actually running down forking paths of words with different stress patters
+        // check current variation against meter until it fails, then try another variation
+        // failure is a multi-syllabic word that doesn't meet meter requirements
+    // if one passes, break and return true
+    
 }

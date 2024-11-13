@@ -37,7 +37,7 @@ public:
     /**
      * Get an array of possible pronuncitation of each word from a text.
      * 
-     * If a word is not found, bool is marked false.
+     * If a word is not found, vector will contain the word that was searched for, and bool is marked false.
      * 
      * @param text (string): text to look up
      * @return An array of pairs, each pair has 1. array of possible pronunciations, 2. a bool flag indicating if word was found.
@@ -46,19 +46,19 @@ public:
 
 
     // Takes a string of phones separated by spaces, returns a string of the stresses. 0 no stress, 1 primary stress, 2 secondary stress.
-    std::string phone_stresses(const std::string& phones);
+    std::string phone_to_stress(const std::string& phones);
 
     // Takes an English word and returns a vector of possible stresses. 
     std::vector<std::string> word_to_stresses(const std::string& word);
 
     // Take a string of phones separeated by spaces, returns a int number of syllables
-    int phone_syllables(const std::string& phones);
+    int phone_to_syllable_count(const std::string& phones);
 
     // Takes an English word, returns a vector of possible stresses.
     std::vector<int> word_to_syllables(const std::string& word);
 
     /**
-     * Convert meter in "x/x/x/x/" form to a vector of bools, where 'x' is false and '/' is true;
+     * Convert meter in "x/x /x/x /" form to a vector of bools, where 'x' is false and '/' is true;
      * 
      * Also removes any whitespace.
      * 
@@ -67,10 +67,97 @@ public:
     */
     std::vector<bool> meter_to_binary(const std::string& meter);
 
-    std::set<std::vector<int>> fuzzy_meter_to_set(const std::string& meter);
+
+     /**
+     * Convert meter in form of "x/x /x/(x /)" to a set of vector<int>, where 'x' is 0 and '/' is 1, where the set contains all the possible meters that could conform to the options.
+     * 
+     * Also removes any whitespace.
+     * 
+     * @param meter (string): meter string containing 'x', '/' and possible white-space
+     * @return Set of Vector of Ints.
+    */
+    std::set<std::vector<int>> fuzzy_meter_to_binary_set(const std::string& meter);
 
 
+    struct Check_Validity_Result {
+        bool is_valid{};
+        std::vector<std::string> unrecognized_words;
+    };
 
-    // Takes a string of text, and a meter, specified with 'x' and '/' ('x' is unstressed, '/' is stressed), e.g. "x/x/x/x/", returns a bool value of whether that meter could be valid for that string.
-    bool check_meter_validity(const std::string& text, const std::string& meter);
+    /**
+     * Check whether a given text and meter combination is valid.
+     * 
+     * Checks all possible pronunciations of each word in a text against all possible meters given optional meters.
+     * 
+     * Single-syllable words automatically passed, given the ambiguity of determining their meter. Multi-syllabic words are checked to see whether their pattern of stresses matches the meter, with various exceptions coded in. E.g. a "secondarily stressed" syllable can function within a meter as an ustressed syllable. (TODO: consider the scenario where an unstressed syllable can function within a meter as stressed...)
+     * 
+     * 
+     * @param text (string): string of english words to check against the meter
+     * @param meter (string): meter string containing 'x', '/' and possible white-space
+     * @return a struct containing a bool is_valid and a vector of strings of unrecognized words
+    */
+    Check_Validity_Result check_meter_validity(const std::string& text, const std::string& meter);
+
+
+    /**
+     * Check whether a given text and syllable count combination is valid.
+     * 
+     * Checks all possible pronunciations of each word in a text against the syllable count
+     * 
+     * @param text (string): string of english words
+     * @param syllable_cout (int): number of syllables
+     * @return a struct containing a bool is_valid and a vector of strings of unrecognized words
+    */
+    Check_Validity_Result check_syllable_validity(const std::string& text, int syllable_count);
+
+
+    
+
+    /**
+     * Gets the hex-distance between two vowels. 
+     * 
+     * "Hex-distance" is something I made up. I've arranged the CMU dict monophthong vowels into a hexagon grid.
+     *                                                     
+                                                      
+         ..         .          .         ..           
+      .::  .=.   .=.  ::.  .::  .=.   .=.  ::.        
+    .:.       .=.       .::.       .=.       .:       
+    ..   IY    =    IH   .    UH    =    UW   .       
+    ..         =         .          =         .       
+    ..        .=.        ..        .=.        .       
+       =.  .-.   ::   .=    +.   -:   .-.  .=         
+         .-         -.        .-         -.           
+          :   EH    :    AH    :    AO   -            
+          :         :          :         -            
+          -.       .-.        .-.        -            
+           ..=   +..  .-.  .-.  ..=   =..             
+              .=.        ..         =                 
+               =    AE   .    AA    =                 
+               =         .          =                 
+               =:.      .::.      ..=                 
+                 .:: .-.    .=. ::.                                                           
+     * 
+     * 
+     * Vowel Distance here is the number of hexagons you have to traverse to get from one vowel to another.
+     * 
+     * NOTE: this a reasonable abstraction for parsing vowels from CMU_DICT. 
+     * 
+     * 
+     * @param arpabet_vowel_1 (string): an ARPABET vowel
+     * @param arpabet_vowel_2 (string): an ARPABET vowel
+     * @return (int): the hex-distance between the two vowels. 
+    */
+    int hex_vowel_distance(const std::string& arpabet_vowel_1, const std::string& arpabet_vowel_2);
+
+
+    /**
+     * Check whether a given text and syllable count combination is valid.
+     * 
+     * Checks all possible pronunciations of each word in a text against the syllable count
+     * 
+     * @param text (string): string of english words
+     * @param syllable_cout (int): number of syllables
+     * @return a struct containing a bool is_valid and a vector of strings of unrecognized words
+    */
+    Check_Validity_Result check_end_rhyme_validity(const std::string& line1, const std::string& line2, int vowel_distance, int consonant_difference);
 };

@@ -1,5 +1,5 @@
 # Add the test executable
-add_executable(tests test.cpp ${CMAKE_SOURCE_DIR}/src/CMU_Dict.cpp)
+add_executable(tests testCMU_DICT.cpp testVowelHexGraph.cpp ${CMAKE_SOURCE_DIR}/src/CMU_Dict.cpp ${CMAKE_SOURCE_DIR}/src/VowelHexGraph.cpp)
 
 
 # Link the test executable with Catch2

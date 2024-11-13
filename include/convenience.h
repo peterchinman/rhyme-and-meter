@@ -26,7 +26,7 @@ inline std::vector<std::string> strip_punctuation(const std::string& text){
    std::vector<std::string> output{};
    std::string word{};
    while (iss >> word) {
-      std::regex word_regex("[a-zA-Z]+(-?[a-zA-Z]+)*");
+      std::regex word_regex("[a-zA-Z]+([-']?[a-zA-Z]+)*");
 
       for (std::sregex_iterator it{word.begin(), word.end(), word_regex}, end{}; it != end; ++it) {
          std::smatch match = *it;

@@ -4,17 +4,17 @@
 #include <vector>
 
 struct VowelFixture {
-    mutable VowelHexGraph vowel_hex_graph{};
+    // mutable VowelHexGraph vowel_hex_graph{};
 
     VowelFixture() {
-        vowel_hex_graph.initialize();
+        VowelHexGraph::initialize();
     }
 };
 
 TEST_CASE_PERSISTENT_FIXTURE(VowelFixture, "VowelHexGraph tests") {
 
     SECTION("VowelHexGraph initialize and add_edge working correctly") {
-        std::vector<std::string> vowel_connections{vowel_hex_graph.get_connected_vowels("AE")};
+        std::vector<std::string> vowel_connections{VowelHexGraph::get_connected_vowels("AE")};
         std::vector<std::string> expected{"AA", "EH", "AH"};
         bool all_match{true};
 
@@ -28,17 +28,40 @@ TEST_CASE_PERSISTENT_FIXTURE(VowelFixture, "VowelHexGraph tests") {
     }
 
     SECTION("VowelHexGraph::calculate_shortest_distance"){
-        REQUIRE(vowel_hex_graph.calculate_shortest_distance("AE", "AE") == 0);
-        REQUIRE(vowel_hex_graph.calculate_shortest_distance("AE", "AH") == 1);
-        REQUIRE(vowel_hex_graph.calculate_shortest_distance("UW", "IH") == 2);
-        REQUIRE(vowel_hex_graph.calculate_shortest_distance("AO", "IY") == 3);
+        REQUIRE(VowelHexGraph::calculate_shortest_distance("AE", "AE") == 0);
+        REQUIRE(VowelHexGraph::calculate_shortest_distance("AE", "AH") == 1);
+        REQUIRE(VowelHexGraph::calculate_shortest_distance("UW", "IH") == 2);
+        REQUIRE(VowelHexGraph::calculate_shortest_distance("AO", "IY") == 3);
     }
 
     SECTION("VowelHexGraph::calculate_all_distances") {
-        REQUIRE(vowel_hex_graph.get_distance("AE", "AE") == 0);
-        REQUIRE(vowel_hex_graph.get_distance("AE", "AH") == 1);
-        REQUIRE(vowel_hex_graph.get_distance("AH", "AE") == 1);
-        REQUIRE(vowel_hex_graph.get_distance("AO", "IY") == 3);
-        REQUIRE(vowel_hex_graph.get_distance("IY", "AO") == 3);
+        REQUIRE(VowelHexGraph::get_distance("AE", "AE") == 0);
+        REQUIRE(VowelHexGraph::get_distance("AE", "AH") == 1);
+        REQUIRE(VowelHexGraph::get_distance("AH", "AE") == 1);
+        REQUIRE(VowelHexGraph::get_distance("AO", "IY") == 3);
+        REQUIRE(VowelHexGraph::get_distance("IY", "AO") == 3);
+    }
+
+    SECTION("VowelHexGraph::calculate_all_distances but including diphthongs") {
+        // THESE are all my opinionated diphthong adjacencies
+        REQUIRE(VowelHexGraph::get_distance("AW", "UH") == 1);
+        REQUIRE((VowelHexGraph::get_distance("AW", "OW") == 1));
+        REQUIRE((VowelHexGraph::get_distance("AW", "AH") == 1));
+
+        REQUIRE(VowelHexGraph::get_distance("AY", "IH") == 1);
+        REQUIRE((VowelHexGraph::get_distance("AY", "EY") == 1));
+        REQUIRE((VowelHexGraph::get_distance("AY", "AH") == 1));
+
+        REQUIRE(VowelHexGraph::get_distance("EY", "IH") == 1);
+        REQUIRE(VowelHexGraph::get_distance("EY", "EH") == 1);
+        REQUIRE(VowelHexGraph::get_distance("EY", "IY") == 1);
+
+        REQUIRE(VowelHexGraph::get_distance("OW", "OY") == 1);
+        REQUIRE(VowelHexGraph::get_distance("OW", "UH") == 1);
+        REQUIRE(VowelHexGraph::get_distance("OW", "UW") == 1);
+        REQUIRE(VowelHexGraph::get_distance("OW", "AO") == 1);
+
+        REQUIRE(VowelHexGraph::get_distance("OY", "IH") == 1);
+
     }
 }

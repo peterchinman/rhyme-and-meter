@@ -19,6 +19,7 @@ private:
         "AW", "AY", "EY", "OW", "OY" // 5 dipthongs
     };
 
+// TODO mark functions as const that don't change state
 
 public:
     // assumes filepath "../data/cmudict-0.7b"
@@ -32,7 +33,7 @@ public:
      * @param (string) word: English word to look up.
      * @return Vector of strings, of the possible pronunciations recorded in the dictionary, each of which are a string of ARAPBET phones separated by spaces.
     */
-    std::vector<std::string> find_phones(std::string word);
+    std::vector<std::string> word_to_phones(std::string word);
 
     /**
      * Get an array of possible pronuncitation of each word from a text.
@@ -56,17 +57,6 @@ public:
 
     // Takes an English word, returns a vector of possible stresses.
     std::vector<int> word_to_syllables(const std::string& word);
-
-    /**
-     * Convert meter in "x/x /x/x /" form to a vector of bools, where 'x' is false and '/' is true;
-     * 
-     * Also removes any whitespace.
-     * 
-     * @param meter (string): meter string containing 'x', '/' and possible white-space
-     * @return Vector of Bools. 
-    */
-    std::vector<bool> meter_to_binary(const std::string& meter);
-
 
      /**
      * Convert meter in form of "x/x /x/(x /)" to a set of vector<int>, where 'x' is 0 and '/' is 1, where the set contains all the possible meters that could conform to the options.
@@ -110,54 +100,55 @@ public:
     */
     Check_Validity_Result check_syllable_validity(const std::string& text, int syllable_count);
 
-
-    
+    /**
+     * Get the rhyming part from a string of space-separated phones.
+     * 
+     * "Rhyming part" refers to the accented vowel closest to the end of the word, to the end of the word.
+     * 
+     * @param phones (string): string of space-separated phones
+     * @return (string): a string of space-separated phones
+    */
+    std::string get_rhyming_part(const std::string& phones);
 
     /**
-     * Gets the hex-distance between two vowels. 
+     * Convert CMU style space-separated string of phones to vector of separate symbols.
      * 
-     * "Hex-distance" is something I made up. I've arranged the CMU dict monophthong vowels into a hexagon grid.
-     *                                                     
-                                                      
-         ..         .          .         ..           
-      .::  .=.   .=.  ::.  .::  .=.   .=.  ::.        
-    .:.       .=.       .::.       .=.       .:       
-    ..   IY    =    IH   .    UH    =    UW   .       
-    ..         =         .          =         .       
-    ..        .=.        ..        .=.        .       
-       =.  .-.   ::   .=    +.   -:   .-.  .=         
-         .-         -.        .-         -.           
-          :   EH    :    AH    :    AO   -            
-          :         :          :         -            
-          -.       .-.        .-.        -            
-           ..=   +..  .-.  .-.  ..=   =..             
-              .=.        ..         =                 
-               =    AE   .    AA    =                 
-               =         .          =                 
-               =:.      .::.      ..=                 
-                 .:: .-.    .=. ::.                                                           
-     * 
-     * 
-     * Vowel Distance here is the number of hexagons you have to traverse to get from one vowel to another.
-     * 
-     * NOTE: this a reasonable abstraction for parsing vowels from CMU_DICT. 
-     * 
-     * 
-     * @param arpabet_vowel_1 (string): an ARPABET vowel
-     * @param arpabet_vowel_2 (string): an ARPABET vowel
-     * @return (int): the hex-distance between the two vowels. 
+     * @param phones (string): string of space-separated phones
+     * @return (vector<string>): vector of phone symbols
     */
-    int hex_vowel_distance(const std::string& arpabet_vowel_1, const std::string& arpabet_vowel_2);
-
+    std::vector<std::string> phones_string_to_vector(const std::string& phones);
 
     /**
-     * Check whether a given text and syllable count combination is valid.
+     * Implementation of levenshtein distance algorithm, but comparing ARPABET symbols, instead of characters, with anonymized vowels.
      * 
-     * Checks all possible pronunciations of each word in a text against the syllable count
+     * I.e. Comparing "K IH1 T AH0 N" and "S IH1 T IH0 NG", we will in fact compare {"K", vowel, "T", vowel, "N"} and {"S", vowel, "T", vowel, "NG"}, which gives us a distance of 2.
      * 
-     * @param text (string): string of english words
-     * @param syllable_cout (int): number of syllables
-     * @return a struct containing a bool is_valid and a vector of strings of unrecognized words
+     * TODO: this does not take consonant distance into account. E.g. /B/ and /P/ should be closer than /B/ and /SH/. This is sort of a hack to get something meaningful in the meantime. But ulitmately we should incorporate consonant distance.
+     *
+     * 
+     * @param phones1 (string): string of space-separated phones
+     * @param phones2 (stinrg): string of space-separated phones
+     * @return (int): levenshtein distance between the sets of phones
     */
-    Check_Validity_Result check_end_rhyme_validity(const std::string& line1, const std::string& line2, int vowel_distance, int consonant_difference);
+    int levenshtein_distance(const std::string& phones1, const std::string& phones2);
+
+    /**
+     * Get the rhyming distance between two strings of phones. First, extracts the rhyming part of each, and then compares them.
+     * 
+     * 
+     * 
+     * If rhyming parts are identical distance = 0. 
+     * If rhyming parts have identical consonant structure, distance =  sum of VowelHexGraph::get_distance(vowel1, vowel2) for each vowel in rhyming part
+     * TODO: Is sum correct here? Or should they be, multiplied??
+     * 
+     * Mis-matched vowel stress = +1 distance.
+     * 
+     * 
+     * @param phone1 (phones): string of space-separated phones
+     * @param phone 2(string): string of space-separated phones
+     * @return (string): a string of space-separated phones
+    */
+    int rhyme_distance(const std::string& phones1, const std::string& phones2);
+
+
 };

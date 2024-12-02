@@ -1,5 +1,6 @@
 #include "CMU_Dict.h"
 #include "convenience.h"
+#include "Hirschberg.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -56,7 +57,8 @@ bool CMU_Dict::import_dictionary() {
 }
 
 // throws a std::exception if word not found
-std::vector<std::string> CMU_Dict::find_phones(std::string word) {
+// TODO THIS IS A BADLY NAMED FUNCTION!!
+std::vector<std::string> CMU_Dict::word_to_phones(std::string word) {
     // capitalize all queries
     std::transform(word.begin(), word.end(), word.begin(), ::toupper);
     auto it = m_dictionary.find(word);
@@ -75,7 +77,7 @@ std::vector<std::pair<std::vector<std::string>, bool>> CMU_Dict::text_to_phones(
 
     for (const auto & w : words) {
         try {
-            std::vector<std::string> phones{find_phones(w)};
+            std::vector<std::string> phones{word_to_phones(w)};
             results.emplace_back(phones, true);
         } catch (const std::exception &) {
             std::vector<std::string> word_searched_for{};
@@ -101,7 +103,7 @@ std::string CMU_Dict::phone_to_stress(const std::string& phones) {
 std::vector<std::string> CMU_Dict::word_to_stresses(const std::string& word) {
     std::vector<std::string> stresses{};
 
-    std::vector<std::string> phones{find_phones(word)};
+    std::vector<std::string> phones{word_to_phones(word)};
     for (const auto & p : phones) {
         stresses.emplace_back(phone_to_stress(p));
     }
@@ -114,23 +116,11 @@ int CMU_Dict::phone_to_syllable_count(const std::string& phones) {
 
 std::vector<int> CMU_Dict::word_to_syllables(const std::string& word) {
     std::vector<int> syllables;
-    std::vector<std::string> phones{find_phones(word)};
+    std::vector<std::string> phones{word_to_phones(word)};
     for(const auto & p : phones) {
         syllables.emplace_back(phone_to_syllable_count(p));
     }
     return syllables;
-}
-
-std::vector<bool> CMU_Dict::meter_to_binary(const std::string& meter){
-    std::vector<bool> binary{};
-
-    for(const auto& c : meter){
-        if (std::isspace(static_cast<unsigned char>(c))) continue;
-        if (c == 'x') binary.emplace_back(0);
-        if (c == '/') binary.emplace_back(1);
-    }
-
-    return binary;
 }
 
 std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string& meter){
@@ -438,10 +428,101 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_syllable_validity(const std::str
     return result;
 }
 
-CMU_Dict::Check_Validity_Result CMU_Dict::check_end_rhyme_validity(const std::string& line1, const std::string& line2, int vowel_distance, int consonant_difference) {
-    Check_Validity_Result result{};
-    
+std::string CMU_Dict::get_rhyming_part(const std::string& phones) {
+    std::string result{};
+    // if we were using C++23 we could use std::ranges::find_last_if, but we're not
+
+    // get a reverse iterator pointing at the number in the last stressed vowel
+    auto r_it {std::find_if(phones.rbegin(), phones.rend(), [](char c) {
+        return std::isdigit(c) && c != '0';
+    })};
+    // if we found it
+    if (r_it != phones.rend()) {
+        // move it up to the first char of our vowel
+        r_it += 2;
+        // turn it around
+        // base moves us one to the right, so we got to step it back
+        auto f_it = r_it.base() - 1;
+        std::copy(f_it, phones.end(), std::back_inserter(result));
+        return result;
+    }
+    // but if the word has no stresses, we'll return from just the last vowel onward
+    auto no_stress_r_it {std::find_if(phones.rbegin(), phones.rend(), [](char c) {
+        return std::isdigit(c);
+    })};
+
+    if (no_stress_r_it != phones.rend()) {
+        // move it up to the first char of our vowel
+        no_stress_r_it += 2;
+        // turn it around
+        // base moves us one to the right, so we got to step it back
+        auto f_it = no_stress_r_it.base() - 1;
+        std::copy(f_it, phones.end(), std::back_inserter(result));
+        return result;
+    }
+
+    // else, there are no vowels at all, so we return an empty string
     return result;
+}
+
+std::vector<std::string> CMU_Dict::phones_string_to_vector(const std::string& phones) {
+    std::vector<std::string> result{};
+    std::istringstream iss{phones};
+    std::string word{};
+    while(iss >> word) {
+        result.emplace_back(word);
+    }
+    return result;
+}
+
+int CMU_Dict::levenshtein_distance(const std::string& phones1, const std::string& phones2) {
+    std::cout << "phones1: " << phones1 << std::endl;
+    std::cout << "phones2: " << phones2 << std::endl;
+    // Early return for trivial cases
+    if (phones1.empty()) return phones2.size();
+    if (phones2.empty()) return phones1.size();
+
+    std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
+    std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
+
+    size_t len1 = symbols1.size();
+    size_t len2 = symbols2.size();
+
+    // Create two rows for dynamic programming
+    std::vector<int> prev(len2 + 1, 0);
+    std::vector<int> curr(len2 + 1, 0);
+
+    // Initialize base cases
+    for (size_t j = 0; j <= len2; ++j) {
+        prev[j] = j * 10;
+    }
+
+    // Fill the DP table row by row
+    for (size_t i = 1; i <= len1; ++i) {
+        // Base case, other axis
+        curr[0] = i * 10;
+        for (size_t j = 1; j <= len2; ++j) {
+            // std::cout << "Comparing: " << symbols1[i-1];
+            // std::cout << " and " << symbols2[j-1] << std::endl;
+            int mismatch_score{-1 * MATCH_OR_MISMATCH_SCORE(symbols1[i-1], symbols2[j-1])};
+            
+            curr[j] = std::min({ 
+                prev[j] + 10,      // Deletion
+                curr[j - 1] + 10,  // Insertion
+                prev[j - 1] + mismatch_score // Substitution
+            });
+
+            // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;
+        }
+        prev.swap(curr);
+    }
+
+    return prev[len2];
+}
+
+
+int CMU_Dict::rhyme_distance(const std::string& phones1, const std::string& phones2) {
+    
 }
 
 

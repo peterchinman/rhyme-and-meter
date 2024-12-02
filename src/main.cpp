@@ -1,60 +1,61 @@
 #include "CMU_Dict.h"
 #include "VowelHexGraph.h"
+#include "Hirschberg.hpp"
 #include <iostream>
 #include <chrono>
+#include <sstream>
 
-
-// FUNCTION TO OUTPUT TO CHECK METER
-// int main(int argc, char* argv[]) {
-//     if (argc != 3) {
-//         std::cerr << "Usage: " << argv[0] << " <text> <meter>" << std::endl;
-//         return 1;
-//     }
-//     CMU_Dict dict;
-//     bool dictBool = dict.import_dictionary();
-
-//     std::string text = argv[1];
-//     std::string meter = argv[2];
-
-//     CMU_Dict::Check_Validity_Result result = dict.check_meter_validity(text, meter);
-
-//     if (result.is_valid){
-//         std::cout << "valid" << std::endl;
-//         return 0;
-//     }
-//     else {
-//         std::cout << "invalid" << std::endl;
-//         return 1;
-//     }
-// }
-
-int main() {
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    VowelHexGraph vowel_hex_graph;
-    vowel_hex_graph.initialize();
-
-    for (int i{}; i < 10000; ++i) {
-        vowel_hex_graph.calculate_shortest_distance("IY", "AA");
+void print_pair(std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair ) {
+    for (const auto & symbol : ZWpair.first) {
+        std::cout << symbol;
+        for(std::size_t i{}; i < 4 - symbol.size(); ++i){
+            std::cout << " ";
+        }
     }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    auto start2 = std::chrono::high_resolution_clock::now();
-
-    VowelHexGraph vowel_hex_graph2;
-    vowel_hex_graph2.initialize();
-    vowel_hex_graph2.calculate_all_distances();
-
-    for (int i{}; i < 10000; ++i) {
-        vowel_hex_graph2.get_distance("IY", "AA");
+    std::cout << std::endl;
+    for (const auto & symbol : ZWpair.second) {
+        std::cout << symbol;
+        for(std::size_t i{}; i < 4 - symbol.size(); ++i){
+            std::cout << " ";
+        }
     }
-
-    auto end2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2);
-
-    std::cout << "Calculating live, time taken: " << duration.count() << " milliseconds" << std::endl;
-    std::cout << "Calculating first, time taken: " << duration2.count() << " milliseconds" << std::endl;
+    std::cout << std::endl;
 }
+// FUNCTION TO OUTPUT TO CHECK METER
+int main() {
+    CMU_Dict dict{};
+    dict.import_dictionary();
+    std::string phones1 {"B AA1 R K"};
+    std::string phones2 {"B AA1 R K IH0 NG"};
+    std::string phones3 {"K IH1 NG"};
+    std::string phones4 {"L AA1 R K"};
+
+    auto vec1 {dict.phones_string_to_vector(phones1)};
+    auto vec2 {dict.phones_string_to_vector(phones2)};
+    auto vec3 {dict.phones_string_to_vector(phones3)};
+    auto vec4 {dict.phones_string_to_vector(phones4)};
+
+    auto H_Return1 = Hirschberg(vec1, vec2);
+    auto edit_distance1 = dict.levenshtein_distance(phones1, phones2);
+    auto H_Return2 = Hirschberg(vec2, vec3);
+    auto edit_distance2 = dict.levenshtein_distance(phones2, phones3);
+    auto H_Return3 = Hirschberg(vec1, vec3);
+    auto edit_distance3 = dict.levenshtein_distance(phones1, phones3);
+    auto H_Return4 = Hirschberg(vec1, vec4);
+    auto edit_distance4 = dict.levenshtein_distance(phones1, phones4);
+
+    print_pair(H_Return1.ZWpair);
+    std:: cout << "Edit Distance: " << edit_distance1 << std::endl;
+    std::cout << std::endl;
+    print_pair(H_Return2.ZWpair);
+    std:: cout << "Edit Distance: " << edit_distance2 << std::endl;
+    std::cout << std::endl;
+    print_pair(H_Return3.ZWpair);
+    std:: cout << "Edit Distance: " << edit_distance3 << std::endl;
+    std::cout << std::endl;
+    print_pair(H_Return4.ZWpair);
+    std:: cout << "Edit Distance: " << edit_distance4 << std::endl;
+    std::cout << std::endl;
+    
+}
+

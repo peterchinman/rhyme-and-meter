@@ -51,7 +51,7 @@ int VowelHexGraph::calculate_shortest_distance(const std::string& vowel1, const 
 
 void VowelHexGraph::calculate_all_distances() {
    // we need to get all pairs of vowels
-   std::vector<std::string> vowels{"AE", "AA", "EH", "AH", "AO", "IY", "IH", "UH", "UW"};
+   std::vector<std::string> vowels{"AE", "AA", "EH", "AH", "AO", "IY", "IH", "UH", "UW", "ER", "AW", "AY", "EY", "OW", "OY"};
    for (std::size_t i{}; i < vowels.size(); ++i) {
       for (std::size_t j{i}; j < vowels.size(); ++j){
          // add shortest distance between these two vowels to the map
@@ -61,27 +61,101 @@ void VowelHexGraph::calculate_all_distances() {
 }
 
 void VowelHexGraph::initialize(){
-   add_edge("AE", "AA");
-   add_edge("AE", "AH");
-   add_edge("AE", "EH");
-   add_edge("AA", "AO");
-   add_edge("AA", "AH");
-   add_edge("EH", "AH");
-   add_edge("EH", "IH");
-   add_edge("EH", "IY");
-   add_edge("AH", "AO");
-   add_edge("AH", "UH");
-   add_edge("AH", "IH");
-   add_edge("AO", "UW");
-   add_edge("AO", "UH");
-   add_edge("IY", "IH");
-   add_edge("IH", "UH");
-   add_edge("UH", "UW");
+   if (!initialized) {
+      add_edge("AE", "AA");
+      add_edge("AE", "AH");
+      add_edge("AE", "EH");
+      add_edge("AA", "AO");
+      add_edge("AA", "AH");
+      add_edge("EH", "AH");
+      add_edge("EH", "IH");
+      add_edge("EH", "IY");
+      add_edge("AH", "AO");
+      add_edge("AH", "UH");
+      add_edge("AH", "IH");
+      add_edge("AO", "UW");
+      add_edge("AO", "UH");
+      add_edge("IY", "IH");
+      add_edge("IH", "UH");
+      add_edge("UH", "UW");
 
-   calculate_all_distances();
+      /**
+       * OPIONATED /ER/ ADJACENCY:
+       * 
+       * 2. ER as in BIRD is adjacent to:
+       *    AH as in BUT:  1
+       */
+      add_edge("ER", "AH");
+
+
+      /** 
+       * 
+       * DIPTHONG ADJACENCIES
+       * "AW", "AY", "EY", "OW", "OY" // 5 dipthongs
+       *  bout, bite, bait, boat, boy
+       * 
+       * I am making some extremely opinionated decisions here:
+       * 
+       * 1. AW as in BOUT is adjacent to:
+       *    UH as in BUSH: 1
+       *    OW as in BOAT: 1
+       *    AH as in BUT:  1
+       *    AA : 2 (satisfied by AH adjacency) ((if you were to get rid of that you'd need to somehow set a distance, e.g. by introducing a notion of distance into edges))
+       *    AE : 2 (see above)
+       */
+      add_edge("AW", "UH");
+      add_edge("AW", "OW");
+      add_edge("AW", "AH");
+      /**
+       * 
+       * 2. AY as in BITE is adjacent to:
+       *    IH as in BIT:  1 
+       *    EY as in BAIT: 1
+       *    AH as in BUT:  1
+       *    AA : 2 (satisfied by AH adjacency) ((if you were to get rid of that you'd need to somehow set a distance, e.g. by introducing a notion of distance into edges))
+       *    AE : 2 (see above)
+       */
+      add_edge("AY", "IH");
+      add_edge("AY", "EY");
+      add_edge("AY", "AH");
+      /**
+       * 3. EY as in BAIT is adjacent to:
+       *    AY as in BITE: 1 *redundant
+       *    IH as in BIT:  1
+       *    EH as in BET:  1
+       *    IY as in BEAT: 1
+       */
+      add_edge("EY", "IH");
+      add_edge("EY", "EH");
+      add_edge("EY", "IY");
+      /** 4. OW as in BOAT is adjacent to:
+       *    OY as in BOY:  1
+       *    AW as in BOUT: 1 *redundant
+       *    UH as in BUSH: 1
+       *    UW as in BOOT: 1
+       *    AO as in BOMB: 1
+       */
+      add_edge("OW", "OY");
+      add_edge("OW", "UH");
+      add_edge("OW", "UW");
+      add_edge("OW", "AO");
+      /* 5. OY as in BOY is adjacent to:
+      *    IH as in BIT:  1
+      *    OW as in BOAT: 1 *redundant
+      */
+      add_edge("OY", "IH");
+
+      calculate_all_distances();
+      
+      initialized = true;
+   }
+   
 }
 
 int VowelHexGraph::get_distance(const std::string& vowel1, const std::string& vowel2) {
+   if (!initialized) {
+      throw std::runtime_error("VowelHexGraph not initialized. Call initialize() first.");
+   }
    return distance_between_vowels_map[std::make_pair(vowel1, vowel2)];
 }
 

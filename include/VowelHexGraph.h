@@ -5,11 +5,20 @@
 #include <utility>
 #include <vector>
 
+
+/**
+ * Uses Static Storage for Distances.
+ * 
+ * USAGE:
+ * 
+ * VowelHexGraph::initialize();
+ * VowelHexGraph::get_distance(vowel1, vowel2);
+*/
 class VowelHexGraph {
 private:
 
     /**
-     * The Vowel Hexagonal Graph is something I made up, by arranging the CMU Pronouncing Dictionary monophthong vowels into a hexagonal grid.
+     * The Vowel Hexagonal Graph is a rendering of vowel space that I invented, by arranging the CMU Pronouncing Dictionary monophthong vowels into a hexagonal grid. Image the vowels dripping with honey.
      *                                                     
                                                       
          ..         .          .         ..           
@@ -25,15 +34,35 @@ private:
           -.       .-.        .-.        -            
            ..=   +..  .-.  .-.  ..=   =..             
               .=.        ..         =                 
-               =    AE   .    AA    =                 
+               =    AE   .   AA    =                 
                =         .          =                 
                =:.      .::.      ..=                 
                  .:: .-.    .=. ::.                                                           
      * 
      * 
      * Which is modeled here as an adjacency map where each vowel is keyed to a vector of connected vowels.
+     * 
+     * DIPTHONGS:
+     * 
+     *  "AW", "AY", "EY", "OW", "OY" // 5 dipthongs
+     *  bout, bite, bait, boat, boy
+     * 
+     * dipthongs mapping
+     *  AW  aʊ  ->  AU* UH
+     *  AY  aɪ  ->  AU* IH
+     *  EY  eɪ  ->  EE* IH
+     *  OW  oʊ  ->  OH* UH
+     *  OY  ɔɪ  ->  OH* IH
+     * 
+     * Where AU is IPA a, between AE and AA
+     *       EE is IPA e, between EH and IY
+     *       OH is IPA o, between AO and UW
+     * 
+     * NOTE: some of the diphthongs start in in-between locations on the hex-graph, but end in either UH or IH.
+    
     */
-     std::unordered_map<std::string, std::vector<std::string>>  adjacency_map{};
+    static inline bool initialized = false;
+    static inline std::unordered_map<std::string, std::vector<std::string>>  adjacency_map{};
 
     // custom PairHash Function so that we can use std::unordered_map with a std::pair as a key
     struct PairHash {
@@ -53,7 +82,7 @@ private:
         }
     };
 
-    std::unordered_map<std::pair<std::string, std::string>, int, PairHash, PairEqual> distance_between_vowels_map{};
+    static inline std::unordered_map<std::pair<std::string, std::string>, int, PairHash, PairEqual> distance_between_vowels_map{};
 
 public:
 
@@ -63,7 +92,7 @@ public:
      * @param vowel1 (string): arpabet Vowel
      * @param vowel2 (string): arpabet Vowel
     */
-    void add_edge(const std::string& vowel1, const std::string& vowel2);
+    static void add_edge(const std::string& vowel1, const std::string& vowel2);
 
     /**
      * Runs a Breadth-First-Search to find the shortest path between two vowels.
@@ -72,20 +101,20 @@ public:
      * @param vowel2 (string): arpabet Vowel
      * @return (int) hex-distance between vowels;
     */
-    int calculate_shortest_distance(const std::string& vowel1, const std::string& vowel2);
+    static int calculate_shortest_distance(const std::string& vowel1, const std::string& vowel2);
 
     /**
      * Calculates all the distances between vowels and adds them to distance_between_vowels_map
      * 
     */
-    void calculate_all_distances();
+    static void calculate_all_distances();
 
     /**
      * Initializes this class with hard-coded vowel connections.
      * Also pre-calculates all the distances between vowels.
      * 
     */
-    void initialize();
+    static void initialize();
 
     /**
      * Returns a vector of vowels connected to a particular vowel node.
@@ -94,7 +123,7 @@ public:
      * @param vowel (string): arpabet Vowel
      * @return vector of connected arpabet vowels
     */
-    std::vector<std::string> get_connected_vowels(const std::string& vowel);
+    static std::vector<std::string> get_connected_vowels(const std::string& vowel);
 
     /**
      * This checks the pre-calculated distances using distance_between_vowels_map;
@@ -111,12 +140,13 @@ public:
      * @param vowel2 (string): arpabet vowel
      * @return (int) hex-distance from vowel1 to vowel2
     */
-    int get_distance(const std::string& vowel1, const std::string& vowel2);
+   
+    static int get_distance(const std::string& vowel1, const std::string& vowel2);
 
     /**
      * TODO: How to define vowel distance between diphthongs?
      * What is the distance between MY and MAW (similar start), or MY and MIT (same end), or MY and ME (similar end)? Is one of those pairs further/closer?
-     * Or BOIL and BALL (same start), or BOIL and BILL (same end), BOIL and BULL or BOIL and BUFF (in between).
+     * Or BOY and BALL (same start), or BOY and BIH (same end), BOY and BULL or BOY-F(riend) and BUFF (in between).
      * My suspicion is that the end point of the diphthong plays a greater role in the "flavor" of the vowel.
      */
       

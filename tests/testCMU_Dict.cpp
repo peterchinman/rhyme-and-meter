@@ -23,22 +23,22 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     SECTION ("dictionary import success") {
         REQUIRE(import_success == true);
     }
-    SECTION("find_phones") {
-        std::vector<std::string> word_lower = dict.find_phones("associate");
+    SECTION("word_to_phones") {
+        std::vector<std::string> word_lower = dict.word_to_phones("associate");
         REQUIRE(word_lower.size() == 4);
         REQUIRE(word_lower[0] == "AH0 S OW1 S IY0 AH0 T");
         // upper case
-        std::vector<std::string> word_upper = dict.find_phones("ASSOCIATE");
+        std::vector<std::string> word_upper = dict.word_to_phones("ASSOCIATE");
         REQUIRE(word_upper.size() == 4);
         REQUIRE(word_upper[0] == "AH0 S OW1 S IY0 AH0 T");
     }
 
-    SECTION("find_phones exception") {
+    SECTION("word_to_phones exception") {
         std::vector<std::string> bad_word{};
-        REQUIRE_THROWS(bad_word = dict.find_phones("sdfasdg"));
+        REQUIRE_THROWS(bad_word = dict.word_to_phones("sdfasdg"));
     } 
 
-    SECTION("phone_stresses") {
+    SECTION("phone_to_stress") {
         std::string stresses = dict.phone_to_stress("M AA1 D ER0 N AY2 Z D");
         REQUIRE(stresses == "102");
     }
@@ -99,15 +99,6 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(phones[0].first[0] == "S M EH1 L IY0");
         REQUIRE(phones[2].second == false);
         REQUIRE(phones[2].first[0] == "asdfaga");
-    }
-
-    // this doesn't take into account optional meters...
-    SECTION("meter_to_bool") {
-        std::string meter{"x/x / x/x /x/"};
-        std::vector<bool> binary = dict.meter_to_binary(meter);
-        REQUIRE(binary.size() == 10);
-        REQUIRE(binary[1] == 1);
-        REQUIRE(binary[8] == 0);
     }
 
     SECTION("fuzzy_meter_to_binary_set") {
@@ -212,15 +203,78 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(dict.check_syllable_validity(bad_text, syllable_count_good2).is_valid == false);
     }
 
-
-    SECTION("rhyme test") {
-        // PATCH  P AE1 CH
-        std::string line1 {"his dog did run into a patch"};
-        // CATCH  K AE1 CH
-        std::string line2 {"to fetch the ball the boy failed catch"};
-
-        REQUIRE(dict.check_end_rhyme_validity(line1, line2, 0, 0).is_valid == true);
+    SECTION("get_rhyming_part") {
+        std::string phones = "M AO1 R F";
+        REQUIRE(dict.get_rhyming_part(phones) == "AO1 R F");
+        phones = "P UH1 L IY0";
+        REQUIRE(dict.get_rhyming_part(phones) == "UH1 L IY0");
+        phones = "P EH1 R AH0 L AH0 S";
+        REQUIRE(dict.get_rhyming_part(phones) == "EH1 R AH0 L AH0 S");
+        phones = "P EH1 R AH0 S K OW2 P";
+        REQUIRE(dict.get_rhyming_part(phones) == "OW2 P");
+        phones = "DH AH0";
+        REQUIRE(dict.get_rhyming_part(phones) == "AH0");
+        phones = "DH S K";
+        REQUIRE(dict.get_rhyming_part(phones) == "");
     }
+
+    SECTION("phones_string_to_vector") {
+        std::string phones1 = "P UH1 L IY0";
+        std::vector<std::string> symbol_vec {dict.phones_string_to_vector(phones1)};
+        REQUIRE(symbol_vec.size() == 4); 
+        REQUIRE(symbol_vec[0] == "P");
+        REQUIRE(symbol_vec[1] == "UH1");
+        REQUIRE(symbol_vec[2] == "L");
+        REQUIRE(symbol_vec[3] == "IY0");
+    }
+
+    SECTION("levenshtein_distance") {
+        // two consonant swaps
+        std::string phones1 = "K IH1 T AH0 N";
+        std::string phones2 = "S IH1 T IH0 NG";
+        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 2);
+
+        // two insertions
+        phones1 = "B AA1 R K";
+        phones2 = "B AA1 R K IH0 NG";
+        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 2);
+
+        // three insertions at beginning
+        phones1 = "B AA1 R K";
+        phones2 = "T R IY1 B AA1 R K";
+        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 3);
+    }
+
+    // SECTION("rhyme_distance") {
+    //     std::string phones1 = "P UH1 L IY0";
+    //     std::string phones2 = "B UH1 L IY0";
+    //     REQUIRE(dict.rhyme_distance(phones1, phones2) == 0);
+
+    //     phones1 = "P UH1 L IY0";
+    //     phones2 = "B UH1 L IY0";
+    //     REQUIRE(dict.rhyme_distance(phones1, phones2) == 0);
+    // }
+
+    // NOTE: for rhymes we'll want to include rhymes with differently stressed vowels, part of rhyming distance
+
+    // TODO Search!
+    // Search for pronunciation
+    // Search for stresses
+    // Search for rhmye
+
+    // TODO levenshtein distance
+    // culprit  K AH1 L P R IH0 T
+    // pulpit   P UH1 L P   IH0 T
+
+
+    // SECTION("rhyme test") {
+    //     // PATCH  P AE1 CH
+    //     std::string line1 {"his dog did run into a patch"};
+    //     // CATCH  K AE1 CH
+    //     std::string line2 {"to fetch the ball the boy failed catch"};
+
+    //     REQUIRE(dict.check_end_rhyme_validity(line1, line2, 0, 0).is_valid == true);
+    // }
 
     // single-rhyme
     // rhyme, sublime

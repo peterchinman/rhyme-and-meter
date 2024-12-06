@@ -1,6 +1,9 @@
+// #include <emscripten/bind.h>
+
 #include "CMU_Dict.h"
 #include "convenience.h"
 #include "Hirschberg.hpp"
+#include "Distance.h"
 
 #include <fstream>
 #include <iostream>
@@ -11,9 +14,17 @@
 #include <unordered_set>
 #include <vector>
 
+CMU_Dict::CMU_Dict() {
+    import_dictionary();
+}
 
 bool CMU_Dict::import_dictionary() {
-    const std::string file_path{"/Users/peterchinman/Documents/0B-Coding/00_projects/rhyme-and-meter/data/cmudict-0.7b"};
+    // for Emscripten
+    // const std::string file_path{"/data/cmudict-0.7b"};
+
+    // for Normal Use
+    const std::string file_path{"../data/cmudict-0.7b"};
+    
     std::ifstream cmudict{file_path};
     if (!cmudict.is_open()) {
         std::cerr << "Failed to open the dictionary." << '\n';
@@ -163,6 +174,9 @@ std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string
             }
         }
         else if (c == '(') {
+            if (in_optional) {
+                throw std::runtime_error("Invalid meter: " + meter);
+            }
             in_optional = true;
             // copy all the current optional paths, setting their bool flag to true
             // so that every optional path we come to, we fork to both take the option and ignore it
@@ -175,6 +189,9 @@ std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string
             possible_paths.insert(possible_paths.end(), new_paths.begin(), new_paths.end());
         }
         else if(c == ')') {
+            if(in_optional != true) {
+                throw std::runtime_error("Invalid meter: " + meter);
+            }
             in_optional = false;
 
             // set all optional paths bool flags to false
@@ -190,6 +207,10 @@ std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string
     }
 
     // record results, using a set so that we don't get duplicates
+    if (in_optional) {
+        throw std::runtime_error("Invalid meter: " + meter);
+    }
+
     std::set<std::vector<int>> meters_set;
     for(const auto & path : possible_paths) {        
         meters_set.insert(path.first);
@@ -465,64 +486,154 @@ std::string CMU_Dict::get_rhyming_part(const std::string& phones) {
     return result;
 }
 
-std::vector<std::string> CMU_Dict::phones_string_to_vector(const std::string& phones) {
-    std::vector<std::string> result{};
-    std::istringstream iss{phones};
-    std::string word{};
-    while(iss >> word) {
-        result.emplace_back(word);
-    }
-    return result;
-}
+std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2) {
+    std::pair< std::vector< std::string >, std::vector< std::string > > result{};
 
-int CMU_Dict::levenshtein_distance(const std::string& phones1, const std::string& phones2) {
-    std::cout << "phones1: " << phones1 << std::endl;
-    std::cout << "phones2: " << phones2 << std::endl;
-    // Early return for trivial cases
-    if (phones1.empty()) return phones2.size();
-    if (phones2.empty()) return phones1.size();
-
-    std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
-    std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
-
-    size_t len1 = symbols1.size();
-    size_t len2 = symbols2.size();
-
-    // Create two rows for dynamic programming
-    std::vector<int> prev(len2 + 1, 0);
-    std::vector<int> curr(len2 + 1, 0);
-
-    // Initialize base cases
-    for (size_t j = 0; j <= len2; ++j) {
-        prev[j] = j * 10;
+    // get the last word of each line
+    std::istringstream iss1{line1};
+    std::string last_word1;
+    while(iss1 >> last_word1){
+        continue;
     }
 
-    // Fill the DP table row by row
-    for (size_t i = 1; i <= len1; ++i) {
-        // Base case, other axis
-        curr[0] = i * 10;
-        for (size_t j = 1; j <= len2; ++j) {
-            // std::cout << "Comparing: " << symbols1[i-1];
-            // std::cout << " and " << symbols2[j-1] << std::endl;
-            int mismatch_score{-1 * MATCH_OR_MISMATCH_SCORE(symbols1[i-1], symbols2[j-1])};
-            
-            curr[j] = std::min({ 
-                prev[j] + 10,      // Deletion
-                curr[j - 1] + 10,  // Insertion
-                prev[j - 1] + mismatch_score // Substitution
-            });
+    std::istringstream iss2{line2};
+    std::string last_word2;
+    while(iss2 >> last_word2){
+        continue;
+    }
+    // get pronunciations of each word
+    // TODO handle exceptions
+    std::vector< std::string > pronunciations1 {word_to_phones(last_word1)};
+    std::vector< std::string > pronunciations2 {word_to_phones(last_word2)};
 
-            // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;
+    // get rhyming part of each pronunciation
+    std::vector< std::string > rhyming_parts1{};
+    std::vector< std::string > rhyming_parts2{};
+
+    for (const auto& p : pronunciations1) {
+        rhyming_parts1.emplace_back(get_rhyming_part(p));
+    }
+    for (const auto& p : pronunciations2) {
+        rhyming_parts2.emplace_back(get_rhyming_part(p));
+    }
+
+    // get syllable length of shortest rhyming part
+    int shortest_length{phone_to_syllable_count(rhyming_parts1[0])};
+    for(const auto& r : rhyming_parts1){
+        if (phone_to_syllable_count(r) < shortest_length) {
+            shortest_length = phone_to_syllable_count(r);
         }
-        prev.swap(curr);
+    }
+    for(const auto& r : rhyming_parts2){
+        if (phone_to_syllable_count(r) < shortest_length) {
+            shortest_length = phone_to_syllable_count(r);
+        }
+    }
+    // cut off front of each rhyming part until they are the length of shortest rhyming part
+    // i.e. count backward from end to nth vowel
+
+    // std::vector<std::string> clipped_parts1{};
+    // std::vector<std::string> clipped_parts2{};
+
+    for(auto& r : rhyming_parts1) {
+        if (phone_to_syllable_count(r) > shortest_length) {
+            // get a reverse iterator pointing at the number in the last stressed vowel
+            auto r_it {std::find_if(r.rbegin(), r.rend(), [](char c) {
+                return std::isdigit(c) && c != '0';
+            })};
+            // progress to correct vowel
+            for(int i{}; i < shortest_length - 1; ++i) {
+                ++r_it;
+                auto r_it_more{std::find_if(r_it, r.rend(), [](char c) {
+                    return std::isdigit(c) && c != '0';
+                })};
+                std::swap(r_it, r_it_more);
+            }
+            // move it up to the first char of our vowel
+            r_it += 2;
+            // turn it around
+            // base moves us one to the right, so we got to step it back
+            auto f_it = r_it.base() - 1;
+            std::string clipped_string(f_it, r.end());
+            r = clipped_string;
+        }
+    }
+    // TODO: DRY
+    for(auto& r : rhyming_parts2) {
+        if (phone_to_syllable_count(r) > shortest_length) {
+            // get a reverse iterator pointing at the number in the last stressed vowel
+            auto r_it {std::find_if(r.rbegin(), r.rend(), [](char c) {
+                return std::isdigit(c);
+            })};
+            // progress to correct vowel
+            for(int i{}; i < shortest_length - 1; ++i) {
+                ++r_it;
+                auto r_it_more{std::find_if(r_it, r.rend(), [](char c) {
+                    return std::isdigit(c);
+                })};
+                std::swap(r_it, r_it_more);
+            }
+            // move it up to the first char of our vowel
+            r_it += 2;
+            // turn it around
+            // base moves us one to the right, so we got to step it back
+            auto f_it = r_it.base() - 1;
+            std::string clipped_string(f_it, r.end());
+            r = clipped_string;
+        }
     }
 
-    return prev[len2];
-}
+    result = std::make_pair(rhyming_parts1, rhyming_parts2);
+    return result;
 
 
-int CMU_Dict::rhyme_distance(const std::string& phones1, const std::string& phones2) {
     
 }
 
+int CMU_Dict::minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > > & rhyming_part_pairs) {
+    int minimum_distance{};
+    bool first_flag{};
 
+    for(const auto& p1 : rhyming_part_pairs.first) {
+        for(const auto & p2 : rhyming_part_pairs.second) {
+            int distance = levenshtein_distance(p1, p2);
+            if(!first_flag) {
+                minimum_distance = distance;
+            }
+            else {
+                if(distance < minimum_distance){
+                    minimum_distance = distance;
+                }
+            }
+        }
+    }
+    
+
+    return minimum_distance;
+}
+
+int CMU_Dict::get_end_rhyme_distance(const std::string& line1, const std::string&line2) {
+    return minimum_end_rhyme_distance(compare_end_line_rhyming_parts(line1, line2));
+}
+
+
+
+// EMSCRIPTEN_BINDINGS(my_module) {
+
+//     emscripten::register_vector<std::string>("StringVector");
+
+
+//     emscripten::class_<CMU_Dict>("CMU_Dict")
+//         .constructor<>()
+//         .function("check_syllable_validity", &CMU_Dict::check_syllable_validity)
+//         .function("check_meter_validity", &CMU_Dict::check_meter_validity)
+//         .function("get_end_rhmye_distance", &CMU_Dict::get_end_rhyme_distance)
+//         ;
+
+//     emscripten::value_object<CMU_Dict::Check_Validity_Result>("Check_Validity_Result")
+//         .field("is_valid", &CMU_Dict::Check_Validity_Result::is_valid)
+//         .field("unrecognized_words", &CMU_Dict::Check_Validity_Result::unrecognized_words)
+//         ;
+
+    
+// }

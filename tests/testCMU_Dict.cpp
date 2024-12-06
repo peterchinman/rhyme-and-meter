@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "convenience.h"
+#include "Distance.h"
 #include "CMU_Dict.h"
 #include "VowelHexGraph.h"
 #include <iostream>
@@ -10,19 +11,19 @@
 struct Fixture {
     mutable CMU_Dict dict;
     mutable VowelHexGraph vowel_hex_graph{};
-    bool import_success{};
+    // bool import_success{};
 
-    Fixture() {
-        import_success = dict.import_dictionary();
-        vowel_hex_graph.initialize();
-    }
+    // Fixture() {
+        // bool import_success = dict.import_dictionary();
+        // vowel_hex_graph.initialize();
+    // }
 };
 
 
 TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
-    SECTION ("dictionary import success") {
-        REQUIRE(import_success == true);
-    }
+    // SECTION ("dictionary import success") {
+    //     REQUIRE(import_success == true);
+    // }
     SECTION("word_to_phones") {
         std::vector<std::string> word_lower = dict.word_to_phones("associate");
         REQUIRE(word_lower.size() == 4);
@@ -132,7 +133,18 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(meters_set2.find(check4) != meters_set2.end());
     }
 
-    // TODO handle failures for example "x/ ) x/ ()"
+    SECTION("fuzzy_meter_to_binary_set exception handling") {
+        // no closing parentheses
+        std::string meter{"x/ ( x/"};
+        std::set<std::vector<int>> meters_set{};
+        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
+        // no opening paren
+        meter = "x/) /x/x";
+        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
+        // paren inside paren
+        meter = "x/ ((xx)) /x";
+        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
+    }
 
     SECTION("check_meter_validity") {
         // single syllable test
@@ -220,7 +232,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
 
     SECTION("phones_string_to_vector") {
         std::string phones1 = "P UH1 L IY0";
-        std::vector<std::string> symbol_vec {dict.phones_string_to_vector(phones1)};
+        std::vector<std::string> symbol_vec {phones_string_to_vector(phones1)};
         REQUIRE(symbol_vec.size() == 4); 
         REQUIRE(symbol_vec[0] == "P");
         REQUIRE(symbol_vec[1] == "UH1");
@@ -228,61 +240,106 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(symbol_vec[3] == "IY0");
     }
 
+    // Note: these exact values will change any time you change the weights of insertions/deletions, substituions, etc. SO it maybe makes more sense just to do comparisons. E.g. Distance between "kitten" and "sitting" and less than distance between "kitten" and "written".
     SECTION("levenshtein_distance") {
         // two consonant swaps
         std::string phones1 = "K IH1 T AH0 N";
         std::string phones2 = "S IH1 T IH0 NG";
-        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 2);
+        REQUIRE(levenshtein_distance(phones1, phones2) == 11);
 
         // two insertions
         phones1 = "B AA1 R K";
         phones2 = "B AA1 R K IH0 NG";
-        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 2);
+        REQUIRE(levenshtein_distance(phones1, phones2) == 20);
 
         // three insertions at beginning
         phones1 = "B AA1 R K";
         phones2 = "T R IY1 B AA1 R K";
-        REQUIRE(dict.levenshtein_distance(phones1, phones2) == 3);
+        REQUIRE(levenshtein_distance(phones1, phones2) == 30);
     }
 
-    // SECTION("rhyme_distance") {
-    //     std::string phones1 = "P UH1 L IY0";
-    //     std::string phones2 = "B UH1 L IY0";
-    //     REQUIRE(dict.rhyme_distance(phones1, phones2) == 0);
+    SECTION("compare_end_line_rhyming_parts") {
+        // P UH1 L IY0
+        // B UH1 L IY0
+        std::string line1 = "I pulled the pulley";
+        std::string line2 = "which summoned by bully";
+        auto rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
+        REQUIRE(rhyming_parts.first[0]  == "UH1 L IY0");
+        REQUIRE(rhyming_parts.second[0] == "UH1 L IY0" );
 
-    //     phones1 = "P UH1 L IY0";
-    //     phones2 = "B UH1 L IY0";
-    //     REQUIRE(dict.rhyme_distance(phones1, phones2) == 0);
-    // }
+        line1 = "do you bleed";
+        line2 = "Penelope";
+        rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
+        REQUIRE(rhyming_parts.first[0]  == "IY1 D");
+        REQUIRE(rhyming_parts.second[0] == "IY0" );
 
-    // NOTE: for rhymes we'll want to include rhymes with differently stressed vowels, part of rhyming distance
+        // USES  Y UW1 S AH0 Z
+        // USES(1)  Y UW1 S IH0 Z
+        // USES(2)  Y UW1 Z AH0 Z
+        // USES(3)  Y UW1 Z IH0 Z
+        // ABUSES  AH0 B Y UW1 S IH0 Z
+        // ABUSES(1)  AH0 B Y UW1 Z IH0 Z
+        line1 = "so many uses";
+        line2 = "himself he abuses";
+        rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
+        REQUIRE(rhyming_parts.first.size() == 4);
+        REQUIRE(rhyming_parts.second.size() == 2);
+        REQUIRE(std::find(rhyming_parts.first.begin(), rhyming_parts.first.end(), "UW1 Z IH0 Z") != rhyming_parts.first.end());
+        REQUIRE(std::find(rhyming_parts.first.begin(), rhyming_parts.first.end(), "UW1 S IH0 Z") != rhyming_parts.first.end());
+        REQUIRE(std::find(rhyming_parts.second.begin(), rhyming_parts.second.end(), "UW1 S IH0 Z") != rhyming_parts.second.end());
+        REQUIRE(std::find(rhyming_parts.second.begin(), rhyming_parts.second.end(), "UW1 Z IH0 Z") != rhyming_parts.second.end());
+    }
+
+    SECTION("minimum_end_rhyme_distance") {
+        // perfect rhmye
+        // UH1 L IY0
+        std::string pulley = "I pulled the pulley";
+        std::string bully = "which summoned by bully";
+        int pulley_bully = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(pulley, bully));
+        REQUIRE(pulley_bully == 0);
+        // Vowel Stress + Insertion
+        // IY1 D
+        // IY0
+        std::string bleed = "do you bleed";
+        std::string penelope = "Penelope";
+        int bleed_penelope = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(bleed, penelope));
+        REQUIRE(bleed_penelope == GAP_PENALTY() + SUBSTITUTION_SCORE("IY1", "IY0"));
+        // Vowel Distance + 2 Insertions
+        // UH1 L     IY0
+        // AO1 L T R IY0
+        pulley = "I pulled the pulley";
+        std::string paltry = "that's so paltry";
+        int pulley_paltry = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(pulley, paltry));
+        REQUIRE(pulley_paltry == GAP_PENALTY() * 2 + SUBSTITUTION_SCORE("UH1", "AO1"));
+        // Perfect rhyme, but from among many pronunciations
+        // USES  Y UW1 S AH0 Z
+        // USES(1)  Y UW1 S IH0 Z
+        // USES(2)  Y UW1 Z AH0 Z
+        // USES(3)  Y UW1 Z IH0 Z
+        // ABUSES  AH0 B Y UW1 S IH0 Z
+        // ABUSES(1)  AH0 B Y UW1 Z IH0 Z
+        std::string uses = "so many uses";
+        std::string abuses = "himself he abuses";
+        int uses_abuses = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(uses, abuses));
+        REQUIRE(uses_abuses == 0);
+    }
+
+    // this just strings the last two methods together
+    SECTION("minimum_end_rhyme_distance") {
+        std::string pulley = "I pulled the pulley";
+        std::string bully = "which summoned by bully";
+        int pulley_bully = dict.get_end_rhyme_distance(pulley, bully);
+        REQUIRE(pulley_bully == 0);
+    }
+
+    
 
     // TODO Search!
+    // Search maybe belongs to the Random Word Generator??
     // Search for pronunciation
     // Search for stresses
     // Search for rhmye
 
-    // TODO levenshtein distance
-    // culprit  K AH1 L P R IH0 T
-    // pulpit   P UH1 L P   IH0 T
-
-
-    // SECTION("rhyme test") {
-    //     // PATCH  P AE1 CH
-    //     std::string line1 {"his dog did run into a patch"};
-    //     // CATCH  K AE1 CH
-    //     std::string line2 {"to fetch the ball the boy failed catch"};
-
-    //     REQUIRE(dict.check_end_rhyme_validity(line1, line2, 0, 0).is_valid == true);
-    // }
-
-    // single-rhyme
-    // rhyme, sublime
-    // "feminine" rhyme
-    // picky, tricky
-    // amorous, glamorous / practical, tactical
-
-    // Feminine and dactylic rhymes may also be realized as compound (or mosaic) rhymes (poet, know it).
 
     /**
     * syllabic: a rhyme in which the last syllable of each word sounds the same but does not       necessarily contain stressed vowels. (cleaver, silver, or pitter, patter; the final syllable of the words bottle and fiddle is /l/, a liquid consonant.)
@@ -296,8 +353,6 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     * pararhyme: all consonants match. (tick, tock)
     * alliteration (or head rhyme): matching initial consonants. (ship, short)
     */
-
-
 
     // TODO other types Optionality,
         //e.g. "/x /x [xx, //]" would mean EITHER "/x /x xx" or "/x /x //"

@@ -3,7 +3,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
+VowelHexGraph::VowelHexGraph() {
+    initialize();
+}
 
 void VowelHexGraph::add_edge(const std::string& vowel1, const std::string& vowel2) {
    adjacency_map[vowel1].push_back(vowel2);
@@ -15,7 +17,6 @@ std::vector<std::string> VowelHexGraph::get_connected_vowels(const std::string& 
 }
 
 int VowelHexGraph::calculate_shortest_distance(const std::string& vowel1, const std::string& vowel2){
-   int shortest_distance{};
   
    // If both vowels are the same, the distance is 0
     if (vowel1 == vowel2) return 0;
@@ -158,6 +159,7 @@ int VowelHexGraph::get_distance(const std::string& vowel1, const std::string& vo
    }
    return distance_between_vowels_map[std::make_pair(vowel1, vowel2)];
 }
+
 
 
 

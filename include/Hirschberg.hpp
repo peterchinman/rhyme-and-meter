@@ -1,7 +1,11 @@
 /**
- * Adapted by Peter Chinman, in November 2024, to process vector<string>s instead of strings, allowing for sequence alignment of CMU Pronouncing Dictionary ARPABET symbols, which strings between 1 and 3 characters.
+ * Adapted by Peter Chinman, in November 2024, to process vector<string>s instead of strings, allowing for sequence alignment of CMU Pronouncing Dictionary ARPABET symbols.
  * 
- * MATCH_OR_MISMATCH_SCORE also updated to get vowel and (TODO) consonant distance.
+ * Also cleaned up code for pedantic compiler warnings, (e.g. std::size_t for int, vectors of vectors for variable length arrays)
+ * 
+ * Uses externally defined functions SUBSTITUTION_SCORE() and GAP_SCORE() to evaluate scores.
+ * 
+ * Outputs a struct containing output.ZWpair => the aligned words, as a pair of vectors of strings, as well as output.disatnce => the weighted levenshtein edit distance between strings.
  * 
  * 
  * Hirschberg Algorithm for Sequence Alignment
@@ -17,93 +21,28 @@
  * References:
  * - Hirschberg, D. S. (1975). A linear space algorithm for computing maximal common subsequences.
  *   Communications of the ACM, 18(6), 341–343.
- *
- * Usage:
- * - Compile and run the code, providing input sequences as argv[1] and argv[2].
- * - Adjust parameter scores as desired.
- * - The output will include the aligned sequences.
- *
  */
-
-
 
 #pragma once
 
 #include "VowelHexGraph.h"
+#include "Distance.h"
 
 #include <iostream>
 #include <vector>
 #include <cstring>
 #include <cmath>
 
-inline int GAP_PENALTY() {
-   return -10;
-}
+struct Alignment_And_Distance {
+   std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair{};
+   int distance{};
+};
 
-inline int MATCH_OR_MISMATCH_SCORE(const std::string& s1, const std::string& s2) {
-   const int MATCH_SCORE = 0;
-   const int SAME_VOWEL_DIFFERENT_STRESS = -1;
-   const int VOWEL_TO_CONSONANT_MISMATCH = -30;
-   const int CONSONANT_MISMATCH = -5;
-
-   if (s1 == s2) {
-      return MATCH_SCORE;
-   }
-
-   // std::cout << "Comparing" << s1 << " & " << s2 << std::endl;
-   // Check whether both are vowels
-   else if (std::isdigit(s1.back()) && std::isdigit(s2.back())) {
-      // std::cout<< "Both are vowels." << std::endl;
-
-      std::string v1{s1};
-      std::string v2{s2};
-      int stress1 = v1.back();
-      int stress2 = v2.back();
-      v1.pop_back();
-      v2.pop_back();
-
-      // same vowel different stress
-      if(v1 == v2) {
-         // std::cout << "Same vowel but different stress." << std::endl;
-
-         return SAME_VOWEL_DIFFERENT_STRESS;
-      }
-      else {
-         // Check vowel distance.
-         VowelHexGraph::initialize();
-         int vowel_distance{VowelHexGraph::get_distance(v1, v2)};
-         // std::cout << "Vowel distance is: " << vowel_distance << std::endl;
-
-         // TODO should we return vowel_distance itself, or scale it in some way
-         // Should there be a penalty for vowels having different stresses?
-         if (stress1 != stress2) {
-            return vowel_distance - 1; 
-         }
-         return -1 * vowel_distance;
-
-      }
-   }
-   // At least one of them is a consonant
-   else {
-      // Mismatch vowel to consonant, which we never want to happen??
-      if (std::isdigit(s1.back()) || std::isdigit(s2.back())) {
-         return VOWEL_TO_CONSONANT_MISMATCH; 
-      }
-   
-      // both consonants
-      else {
-         // TODO implement consonant distance
-         // for now
-         return CONSONANT_MISMATCH;
-      }
-   }
-}
 
 
 
 //Useful tools
-inline int max3(int a, int b, int c);
-inline int match_or_mismatch(const std::string& s1, const std::string& s2);
+inline int min3(int a, int b, int c);
 
 //overload pair sum
 inline std::pair<std::vector<std::string>, std::vector<std::string>> operator+(std::pair<std::vector<std::string>, std::vector<std::string>> const& one, std::pair<std::vector<std::string>, std::vector<std::string>> const& two);
@@ -115,61 +54,30 @@ inline std::vector <int> sum_vectors(const std::vector<int>& v1, const std::vect
 inline std::vector<int> NWScore(const std::vector<std::string>& X, const std::vector<std::string>& Y);
 
 //NeedlemanWunsch: returns the alignment pair with standard algorithm
-inline std::pair < std::vector<std::string>, std::vector<std::string> > NeedlemanWunsch(const std::vector<std::string>& X, const std::vector<std::string>& Y);
+inline Alignment_And_Distance NeedlemanWunsch(const std::vector<std::string>& X, const std::vector<std::string>& Y);
 
 //argmax_element: returns position of max element in the vector argument
-inline int argmax_element(const std::vector<int> score);
+inline std::size_t argmin_element(const std::vector<int> score);
 
-struct HirschbergReturn {
-   std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair{};
-   int ymid{};
 
-};
 
 //Hirschberg: main algorithm; returns alignments-pair space-efficiently
-inline HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y);
-
-
-// int main(int argc, char* argv[])
-// {
-//     if(!argv[1] || !argv[2])
-//     {
-//         std::cerr << "Please, insert sequences to confront:" << std::endl
-//                 <<"• Sequence1 as argv[1]" << std::endl
-//                 <<"• Sequence1 as argv[2]" << std::endl;
-//         std::exit(EXIT_FAILURE);
-//     }
-    
-//     const std::string s1 = argv[1], s2 = argv[2];
-//     const int n = s1.size(), m = s2.size();
-    
-//     std::pair<std::string, std::string> ZWpair = Hirschberg(s1,s2);
-//     std::cout << ZWpair.first << std::endl << ZWpair.second << std::endl;
-     
-//     return 0;
-// }
-
+inline Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y);
 
 //Functions
-//Return maximum of three integers
-int max3(int a, int b, int c)
+//Return minimum of three integers
+int min3(int a, int b, int c)
 {
-    if (a >= b && a >= c) return a;
-    else if (b >= a && b >= c) return b;
+    if (a <= b && a <= c) return a;
+    else if (b <= a && b <= c) return b;
     else return c;
-}
-
-//Evaluate if diagonal outcome of Needleman-Wunsch
-int match_or_mismatch(const std::string& s1, const std::string& s2)
-{
-    return MATCH_OR_MISMATCH_SCORE(s1, s2);
 }
 
 std::vector<int> NWScore(const std::vector<std::string>& X, const std::vector<std::string>& Y)
 {
     const int n = X.size();
     const int m = Y.size();
-    int Score[n+1][m+1];
+    std::vector<std::vector<int>> Score(n+1, std::vector<int>(m+1, 0));
     std::vector<int> Lastline;
     
     //Step 1: start from zero
@@ -186,10 +94,10 @@ std::vector<int> NWScore(const std::vector<std::string>& X, const std::vector<st
         Score[1][0] = Score[0][0] + GAP_PENALTY();
         for (int j=1; j<=m;j++)
         {
-            Score[1][j] = max3(
+            Score[1][j] = min3(
                                Score[1][j-1] + GAP_PENALTY(),
                                Score[0][j] + GAP_PENALTY(),
-                               Score[0][j-1] + match_or_mismatch(X[i-1],Y[j-1])
+                               Score[0][j-1] + SUBSTITUTION_SCORE(X[i-1], Y[j-1])
                                );
         }
         
@@ -209,10 +117,14 @@ std::vector<int> NWScore(const std::vector<std::string>& X, const std::vector<st
     
 }
 
-std::pair < std::vector<std::string>, std::vector<std::string> > NeedlemanWunsch (const std::vector<std::string>& X, const std::vector<std::string>& Y)
+Alignment_And_Distance NeedlemanWunsch (const std::vector<std::string>& X, const std::vector<std::string>& Y)
 {
+    Alignment_And_Distance alignment_and_distance{};
+
     const int n = X.size(), m = Y.size();
-    int M[n+1][m+1];
+
+    std::vector<std::vector<int>> M(n+1, std::vector<int>(m+1, 0));
+    // int M[n+1][m+1];
     //STEP 1: assign first row and column
     M[0][0] = 0;
     for (int i=1;i<n+1;i++)
@@ -229,11 +141,14 @@ std::pair < std::vector<std::string>, std::vector<std::string> > NeedlemanWunsch
     {
         for (int j=1;j<m+1;j++)
         {
-            M[i][j] = max3(M[i-1][j-1] + match_or_mismatch(X[i-1], Y[j-1]),
+            M[i][j] = min3(M[i-1][j-1] + SUBSTITUTION_SCORE(X[i-1], Y[j-1]),
                           M[i][j-1] + GAP_PENALTY(),
                           M[i-1][j] + GAP_PENALTY());
         }
     }
+
+    // Set distance
+    alignment_and_distance.distance = M[n][m];
 
     
     //STEP 3: Reconstruct alignment
@@ -244,7 +159,7 @@ std::pair < std::vector<std::string>, std::vector<std::string> > NeedlemanWunsch
     {
         if (i>0
             && j>0
-            && (M[i][j] == M[i-1][j-1] + match_or_mismatch(X[i-1], Y[j-1])))
+            && (M[i][j] == M[i-1][j-1] + SUBSTITUTION_SCORE(X[i-1], Y[j-1])))
         {
             A_1.insert(A_1.begin(), X[i-1]);
             A_2.insert(A_2.begin(), Y[j-1]);
@@ -268,10 +183,9 @@ std::pair < std::vector<std::string>, std::vector<std::string> > NeedlemanWunsch
         }
     }
     
-    std::pair < std::vector<std::string>, std::vector<std::string> > alignment_pair;
-    alignment_pair.first = A_1;
-    alignment_pair.second = A_2;
-    return alignment_pair;
+    alignment_and_distance.ZWpair.first = A_1;
+    alignment_and_distance.ZWpair.second = A_2;
+    return alignment_and_distance;
 }
 
 
@@ -283,7 +197,7 @@ std::vector<int> sum_vectors(const std::vector<int>& v1, const std::vector<int>&
         std::cerr << "In vector sum: vector dimensions are not equal!" << std::endl;
         std::exit(EXIT_FAILURE);
     }
-    for (int i=0; i<v1.size();i++)
+    for (std::size_t i=0; i < v1.size();i++)
     {
         vector_sum.push_back(v1[i] + v2[i]);
     }
@@ -292,20 +206,20 @@ std::vector<int> sum_vectors(const std::vector<int>& v1, const std::vector<int>&
 }
 
 
-int argmax_element(const std::vector<int> score)
+std::size_t argmin_element(const std::vector<int> score)
 {
-    int max = score[0];
-    int max_index=0;
-    for (int i=1; i<score.size();i++)
+    int min = score[0];
+    std::size_t min_index=0;
+    for (std::size_t i=1; i < score.size();i++)
     {
-        if(max < score[i])
+        if(min > score[i])
         {
-            max = score[i];
-            max_index = i;
+            min = score[i];
+            min_index = i;
         }
     }
     
-    return max_index;
+    return min_index;
 }
 
 //overload pair sum
@@ -323,13 +237,14 @@ std::pair<std::vector<std::string>, std::vector<std::string>> operator+(std::pai
 
 
 
-HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y)
+Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y)
 {
+    Alignment_And_Distance alignment_and_distance{};
+
     const int n = X.size();
     const int m = Y.size();
     std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair{};
-    HirschbergReturn hirschberg_return{};
-    int ymid{};
+    
     
     if (n==0)
     {
@@ -337,6 +252,7 @@ HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector
         {
             ZWpair.first.emplace_back("-");
             ZWpair.second.emplace_back(Y[i-1]);
+            alignment_and_distance.distance += GAP_PENALTY();
         }
         
     }
@@ -347,12 +263,13 @@ HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector
         {
             ZWpair.first.emplace_back(X[i-1]);
             ZWpair.second.emplace_back("-");
+            alignment_and_distance.distance += GAP_PENALTY();
         }
     }
     
     else if (n==1 || m ==1)
     {
-        ZWpair = NeedlemanWunsch(X,Y);
+        alignment_and_distance = NeedlemanWunsch(X,Y);
     }
     
     else
@@ -407,14 +324,14 @@ HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector
         #endif //DEBUG
         
         //reverse ScoreR
-        for (int i=1;i<=scoreR.size();i++)
+        for (std::size_t i=1;i<=scoreR.size();i++)
         {
             scoreR_rev.push_back(scoreR[scoreR.size()-i]);
         }
         
-        
-        ymid = argmax_element(sum_vectors(scoreL, scoreR_rev));
-        hirschberg_return.ymid = ymid;
+        auto vector_sum = sum_vectors(scoreL, scoreR_rev);
+        const std::size_t ymid = argmin_element(vector_sum);
+        alignment_and_distance.distance = *std::min_element(vector_sum.begin(), vector_sum.end());
         
         //DEBUG
         #ifdef DEBUG
@@ -422,12 +339,13 @@ HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector
         #endif //DEBUG
         
         //generate Y[1...ymid]
-        for (int i=0;i<ymid;i++)
+        for (std::size_t i=0;i<ymid;i++)
         {
             Y_to_ymid.emplace_back(Y[i]);
         }
         
         //reverse X[xmid+1 ... n]
+        // ^^ original comment, but seems wrong
         for (int i=ymid;i<m;i++)
         {
             Y_from_ymid.emplace_back(Y[i]);
@@ -435,7 +353,7 @@ HirschbergReturn Hirschberg(const std::vector<std::string>& X, const std::vector
         
         
         ZWpair = Hirschberg(X_to_xmid, Y_to_ymid).ZWpair + Hirschberg(X_from_xmid, Y_from_ymid).ZWpair;
+        alignment_and_distance.ZWpair = ZWpair;
     }
-    hirschberg_return.ZWpair = ZWpair;
-    return hirschberg_return;
+    return alignment_and_distance;
 }

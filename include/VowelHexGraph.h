@@ -85,6 +85,7 @@ private:
     static inline std::unordered_map<std::pair<std::string, std::string>, int, PairHash, PairEqual> distance_between_vowels_map{};
 
 public:
+    VowelHexGraph();
 
     /**
      * Adds edges between vowels to out adjacency_map.

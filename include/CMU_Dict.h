@@ -22,6 +22,9 @@ private:
 // TODO mark functions as const that don't change state
 
 public:
+
+    CMU_Dict();
+    
     // assumes filepath "../data/cmudict-0.7b"
     bool import_dictionary();
 
@@ -63,12 +66,24 @@ public:
      * 
      * Also removes any whitespace.
      * 
+     * Throws a std::runtime_error exeception if meter is invalid. 
+     * 
      * @param meter (string): meter string containing 'x', '/' and possible white-space
      * @return Set of Vector of Ints.
     */
     std::set<std::vector<int>> fuzzy_meter_to_binary_set(const std::string& meter);
 
 
+    /**
+     * Struct to return validity of meter, along with list of unrecognized words.
+     * 
+     * Also removes any whitespace.
+     * 
+     * Throws a std::runtime_error exeception if meter is invalid. 
+     * 
+     * @param meter (string): meter string containing 'x', '/' and possible white-space
+     * @return Set of Vector of Ints.
+    */
     struct Check_Validity_Result {
         bool is_valid{};
         std::vector<std::string> unrecognized_words;
@@ -80,6 +95,8 @@ public:
      * Checks all possible pronunciations of each word in a text against all possible meters given optional meters.
      * 
      * Single-syllable words automatically passed, given the ambiguity of determining their meter. Multi-syllabic words are checked to see whether their pattern of stresses matches the meter, with various exceptions coded in. E.g. a "secondarily stressed" syllable can function within a meter as an ustressed syllable. (TODO: consider the scenario where an unstressed syllable can function within a meter as stressed...)
+     * 
+     * TODO: Include a parameter of key/value pairs, consisting of the meter of unrecognized words, for more graceful error handling.
      * 
      * 
      * @param text (string): string of english words to check against the meter
@@ -110,45 +127,53 @@ public:
     */
     std::string get_rhyming_part(const std::string& phones);
 
-    /**
-     * Convert CMU style space-separated string of phones to vector of separate symbols.
-     * 
-     * @param phones (string): string of space-separated phones
-     * @return (vector<string>): vector of phone symbols
-    */
-    std::vector<std::string> phones_string_to_vector(const std::string& phones);
 
     /**
-     * Implementation of levenshtein distance algorithm, but comparing ARPABET symbols, instead of characters, with anonymized vowels.
+     * First, gets pronunciations of the last words of each line.
      * 
-     * I.e. Comparing "K IH1 T AH0 N" and "S IH1 T IH0 NG", we will in fact compare {"K", vowel, "T", vowel, "N"} and {"S", vowel, "T", vowel, "NG"}, which gives us a distance of 2.
+     * TODO: If we know the meter, we want to choose the pronunciation that matches that meter. 
      * 
-     * TODO: this does not take consonant distance into account. E.g. /B/ and /P/ should be closer than /B/ and /SH/. This is sort of a hack to get something meaningful in the meantime. But ulitmately we should incorporate consonant distance.
+     * TODO: run thru all possible lengths of rhyming parts. 
+     * 
+     * E.g. We'd like to be able to check "poet" against "know it"
+     * 
+     * MVP: take the shortest rhyming part and return of pair of possible pronunciations of that length of the end of each line.
+     * 
+     * 
+     * 
+     * @param line1 (string): string of english words
+     * @param line2 (string): string of english words
+     * @return (string): pair of strings 
+    */
+    std::pair< std::vector< std::string >, std::vector< std::string > > compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2);
+    
+
+    
+ 
+
+    /**
+     * Given the possible pronunciations of the rhmying parts of the end of two lines, returns the minimum rhmying distance between them.
      *
+     * TODO: Accept user definined key/value pairs of unknown words + known words that they rhyme with, for graceful error correction. 
      * 
-     * @param phones1 (string): string of space-separated phones
-     * @param phones2 (stinrg): string of space-separated phones
-     * @return (int): levenshtein distance between the sets of phones
+     * @param rhyming_part_pairs (pairs of vec of strings)
+     * @return (int): minimum weighted edit distance
     */
-    int levenshtein_distance(const std::string& phones1, const std::string& phones2);
+    int minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > >& rhyming_part_pairs);
+
 
     /**
-     * Get the rhyming distance between two strings of phones. First, extracts the rhyming part of each, and then compares them.
-     * 
-     * 
-     * 
-     * If rhyming parts are identical distance = 0. 
-     * If rhyming parts have identical consonant structure, distance =  sum of VowelHexGraph::get_distance(vowel1, vowel2) for each vowel in rhyming part
-     * TODO: Is sum correct here? Or should they be, multiplied??
-     * 
-     * Mis-matched vowel stress = +1 distance.
-     * 
-     * 
-     * @param phone1 (phones): string of space-separated phones
-     * @param phone 2(string): string of space-separated phones
-     * @return (string): a string of space-separated phones
+     * Compares the end rhyme distance of two words/lines.
+     * 0     => perfect rhyme!
+     * 1-5   => pretty dang close!
+     * 6-10  => close
+     * 11-20 => further
+     *
+     * @param line1 (string): string of english words
+     * @param line2 (string): string of english words
+     * @return (int): rhyme distance. 
     */
-    int rhyme_distance(const std::string& phones1, const std::string& phones2);
-
-
+    int get_end_rhyme_distance(const std::string& line1, const std::string&line2);
 };
+
+

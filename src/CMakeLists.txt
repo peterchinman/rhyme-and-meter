@@ -6,4 +6,10 @@ add_executable(rhyme-and-meter main.cpp CMU_Dict.cpp VowelHexGraph.cpp)
 # Include directories
 target_include_directories(rhyme-and-meter PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
+target_compile_options(rhyme-and-meter PRIVATE 
+    -Wall 
+    -Wextra 
+    -pedantic 
+)
+
 

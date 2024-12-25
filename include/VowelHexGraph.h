@@ -21,23 +21,23 @@ private:
      * The Vowel Hexagonal Graph is a rendering of vowel space that I invented, by arranging the CMU Pronouncing Dictionary monophthong vowels into a hexagonal grid. Image the vowels dripping with honey.
      *                                                     
                                                       
-         ..         .          .         ..           
-      .::  .=.   .=.  ::.  .::  .=.   .=.  ::.        
-    .:.       .=.       .::.       .=.       .:       
-    ..   IY    =    IH   .    UH    =    UW   .       
-    ..         =         .          =         .       
-    ..        .=.        ..        .=.        .       
-       =.  .-.   ::   .=    +.   -:   .-.  .=         
-         .-         -.        .-         -.           
-          :   EH    :    AH    :    AO   -            
-          :         :          :         -            
-          -.       .-.        .-.        -            
-           ..=   +..  .-.  .-.  ..=   =..             
-              .=.        ..         =                 
-               =    AE   .   AA    =                 
-               =         .          =                 
-               =:.      .::.      ..=                 
-                 .:: .-.    .=. ::.                                                           
+     ..         .          .         ..           
+  .::  .=.   .=.  ::.  .::  .=.   .=.  ::.        
+.:.       .=.       .::.       .=.       .:       
+..   IY    =    IH   .    UH    =    UW   .       
+..         =         .          =         .       
+..        .=.        ..        .=.        .       
+   =.  .-.   ::   .=    +.   -:   .-.  .=         
+     .-         -.        .-         -.           
+      :   EH    :    AH    :    AO   -            
+      :         :          :         -            
+      -.       .-.        .-.        -            
+       ..=   +..  .-.  .-.  ..=   =..             
+          .=.        ..         =                 
+           =    AE   .   AA    =                 
+           =         .          =                 
+           =:.      .::.      ..=                 
+             .:: .-.    .=. ::.                                                           
      * 
      * 
      * Which is modeled here as an adjacency map where each vowel is keyed to a vector of connected vowels.

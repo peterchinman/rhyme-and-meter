@@ -1,4 +1,6 @@
-// #include <emscripten/bind.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
 
 #include "CMU_Dict.h"
 #include "convenience.h"
@@ -617,23 +619,25 @@ int CMU_Dict::get_end_rhyme_distance(const std::string& line1, const std::string
 }
 
 
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_BINDINGS(my_module) {
 
-// EMSCRIPTEN_BINDINGS(my_module) {
-
-//     emscripten::register_vector<std::string>("StringVector");
+    emscripten::register_vector<std::string>("StringVector");
 
 
-//     emscripten::class_<CMU_Dict>("CMU_Dict")
-//         .constructor<>()
-//         .function("check_syllable_validity", &CMU_Dict::check_syllable_validity)
-//         .function("check_meter_validity", &CMU_Dict::check_meter_validity)
-//         .function("get_end_rhmye_distance", &CMU_Dict::get_end_rhyme_distance)
-//         ;
+    emscripten::class_<CMU_Dict>("CMU_Dict")
+        .constructor<>()
+        .function("check_syllable_validity", &CMU_Dict::check_syllable_validity)
+        .function("check_meter_validity", &CMU_Dict::check_meter_validity)
+        .function("get_end_rhmye_distance", &CMU_Dict::get_end_rhyme_distance)
+        ;
 
-//     emscripten::value_object<CMU_Dict::Check_Validity_Result>("Check_Validity_Result")
-//         .field("is_valid", &CMU_Dict::Check_Validity_Result::is_valid)
-//         .field("unrecognized_words", &CMU_Dict::Check_Validity_Result::unrecognized_words)
-//         ;
+    emscripten::value_object<CMU_Dict::Check_Validity_Result>("Check_Validity_Result")
+        .field("is_valid", &CMU_Dict::Check_Validity_Result::is_valid)
+        .field("unrecognized_words", &CMU_Dict::Check_Validity_Result::unrecognized_words)
+        ;
 
     
-// }
+}
+#endif
+

@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include "VowelHexGraph.h"
-#include "Distance.h"
+#include "vowelhexgraph.hpp"
+#include "distance.hpp"
 
 #include <iostream>
 #include <vector>

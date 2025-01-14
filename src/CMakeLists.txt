@@ -1,7 +1,7 @@
-add_executable(rhyme-and-meter main.cpp CMU_Dict.cpp VowelHexGraph.cpp)
+add_executable(rhyme-and-meter main.cpp Rhyme_and_Meter.cpp VowelHexGraph.cpp)
 
-# # Set working directory
-# set_target_properties(rhyme-and-meter PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+target_link_libraries(rhyme-and-meter phonetic)
+
 
 # Include directories
 target_include_directories(rhyme-and-meter PUBLIC ${CMAKE_SOURCE_DIR}/include)

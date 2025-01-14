@@ -1,15 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
-#include "convenience.h"
-#include "Distance.h"
-#include "CMU_Dict.h"
-#include "VowelHexGraph.h"
+#include "distance.hpp"
+#include "rhyme_and_meter.hpp"
+#include "vowelhexgraph.hpp"
 #include <iostream>
 #include <filesystem>
 #include <string>
 #include <vector>
 
 struct Fixture {
-    mutable CMU_Dict dict;
+    mutable Rhyme_and_Meter dict;
     mutable VowelHexGraph vowel_hex_graph{};
     // bool import_success{};
 
@@ -21,87 +20,7 @@ struct Fixture {
 
 
 TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
-    // SECTION ("dictionary import success") {
-    //     REQUIRE(import_success == true);
-    // }
-    SECTION("word_to_phones") {
-        std::vector<std::string> word_lower = dict.word_to_phones("associate");
-        REQUIRE(word_lower.size() == 4);
-        REQUIRE(word_lower[0] == "AH0 S OW1 S IY0 AH0 T");
-        // upper case
-        std::vector<std::string> word_upper = dict.word_to_phones("ASSOCIATE");
-        REQUIRE(word_upper.size() == 4);
-        REQUIRE(word_upper[0] == "AH0 S OW1 S IY0 AH0 T");
-    }
-
-    SECTION("word_to_phones exception") {
-        std::vector<std::string> bad_word{};
-        REQUIRE_THROWS(bad_word = dict.word_to_phones("sdfasdg"));
-    } 
-
-    SECTION("phone_to_stress") {
-        std::string stresses = dict.phone_to_stress("M AA1 D ER0 N AY2 Z D");
-        REQUIRE(stresses == "102");
-    }
-
-    SECTION("word_to_stresses") {
-        std::vector<std::string> stresses{dict.word_to_stresses("atoll")};
-        REQUIRE(stresses[0] == "12");
-        REQUIRE(stresses[2] == "01");
-    }
-
-    SECTION("phone_syllables") {
-        REQUIRE(dict.phone_to_syllable_count("F AY1 ER0") == 2);
-    }
-
-    SECTION("word_to_syllables") {
-        std::vector<int> fire = dict.word_to_syllables("fire");
-        REQUIRE(fire.size() == 2);
-        REQUIRE(fire[0] == 2);
-        REQUIRE(fire[1] == 1);
-    }
-
-    SECTION("text_to_phones simple") {
-        std::string text{"smelly dog"};
-        std::vector<std::pair<std::vector<std::string>, bool>> phones{dict.text_to_phones(text)};
-        REQUIRE(phones.size() == 2);
-        REQUIRE(phones[0].first[0] == "S M EH1 L IY0");
-        REQUIRE(phones[1].first[0] == "D AO1 G");
-    }
-
-    SECTION("strip_punctuation") {
-        std::string text{"Smelly dog? Drip-dry—-good dog."};
-        std::vector<std::string> words{strip_punctuation(text)};
-        REQUIRE(words.size() == 5);
-        REQUIRE(words[0] == "Smelly");
-        REQUIRE(words[2] == "Drip-dry");
-
-        // apostrophes
-        std::string text2{"Can't--couldn't"};
-        std::vector<std::string> words2{strip_punctuation(text2)};
-        // REQUIRE(words2.size() == 5);
-        REQUIRE(words2[0] == "Can't");
-        REQUIRE(words2[1] == "couldn't");
-    }
-  
-
-    SECTION("text_to_phones complex punct") {
-        std::string text{"Smelly dog? Drip-dry--good dog."};
-        std::vector<std::pair<std::vector<std::string>, bool>> phones{dict.text_to_phones(text)};
-        REQUIRE(phones.size() == 5);
-        REQUIRE(phones[0].first[0] == "S M EH1 L IY0");
-        REQUIRE(phones[2].first[0] == "D R IH1 P D R AY1");
-    }
-
-    SECTION("text_to_phones exceptions") {
-        std::string text{"Smelly dog? asdfaga"};
-        std::vector<std::pair<std::vector<std::string>, bool>> phones{dict.text_to_phones(text)};
-        REQUIRE(phones.size() == 3);
-        REQUIRE(phones[0].first[0] == "S M EH1 L IY0");
-        REQUIRE(phones[2].second == false);
-        REQUIRE(phones[2].first[0] == "asdfaga");
-    }
-
+   
     SECTION("fuzzy_meter_to_binary_set") {
         std::string meter{"x/x/x/x/(x/)"};
         std::set<std::vector<int>> meters_set = dict.fuzzy_meter_to_binary_set(meter);
@@ -195,7 +114,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     SECTION("check_meter_validity error handling") {
         std::string text_with_bad_word = "topple Qwerdag ruin Jasdfz";
         std::string meter = "/x /x /x";
-        CMU_Dict::Check_Validity_Result result = dict.check_meter_validity(text_with_bad_word, meter);
+        Rhyme_and_Meter::Check_Validity_Result result = dict.check_meter_validity(text_with_bad_word, meter);
         REQUIRE(result.unrecognized_words[0] == "Qwerdag");
         REQUIRE(result.unrecognized_words[1] == "Jasdfz");
         REQUIRE(result.is_valid == false);
@@ -213,31 +132,6 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(dict.check_syllable_validity(text, syllable_count_wrong).is_valid == false);
         REQUIRE(dict.check_syllable_validity(bad_text, syllable_count_good2).unrecognized_words[0] == "Qwortextant");
         REQUIRE(dict.check_syllable_validity(bad_text, syllable_count_good2).is_valid == false);
-    }
-
-    SECTION("get_rhyming_part") {
-        std::string phones = "M AO1 R F";
-        REQUIRE(dict.get_rhyming_part(phones) == "AO1 R F");
-        phones = "P UH1 L IY0";
-        REQUIRE(dict.get_rhyming_part(phones) == "UH1 L IY0");
-        phones = "P EH1 R AH0 L AH0 S";
-        REQUIRE(dict.get_rhyming_part(phones) == "EH1 R AH0 L AH0 S");
-        phones = "P EH1 R AH0 S K OW2 P";
-        REQUIRE(dict.get_rhyming_part(phones) == "OW2 P");
-        phones = "DH AH0";
-        REQUIRE(dict.get_rhyming_part(phones) == "AH0");
-        phones = "DH S K";
-        REQUIRE(dict.get_rhyming_part(phones) == "");
-    }
-
-    SECTION("phones_string_to_vector") {
-        std::string phones1 = "P UH1 L IY0";
-        std::vector<std::string> symbol_vec {phones_string_to_vector(phones1)};
-        REQUIRE(symbol_vec.size() == 4); 
-        REQUIRE(symbol_vec[0] == "P");
-        REQUIRE(symbol_vec[1] == "UH1");
-        REQUIRE(symbol_vec[2] == "L");
-        REQUIRE(symbol_vec[3] == "IY0");
     }
 
     // Note: these exact values will change any time you change the weights of insertions/deletions, substituions, etc. SO it maybe makes more sense just to do comparisons. E.g. Distance between "kitten" and "sitting" and less than distance between "kitten" and "written".
@@ -310,7 +204,9 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // D AO R HH IH N JH
         // 
         std::string orange = "orange";
-        std::string door_hinge = "door_hinge";
+        std::string door_hinge = "door hinge";
+        // TODO this fails because compare_end_line_rhyming_parts takes the shorter of the two options, i.e. one syllable hinge
+        // preferred behavior is probably to take the length of the first term
         int orange_doorhinge = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(orange, door_hinge));
         REQUIRE(orange_doorhinge == GAP_PENALTY() * 1 + SUBSTITUTION_SCORE("AH0", "IH1"));
         // Vowel Distance + 2 Insertions
@@ -340,33 +236,5 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         int pulley_bully = dict.get_end_rhyme_distance(pulley, bully);
         REQUIRE(pulley_bully == 0);
     }
-
-    
-
-    // TODO Search!
-    // Search maybe belongs to the Random Word Generator??
-    // Search for pronunciation
-    // Search for stresses
-    // Search for rhmye
-
-
-    /**
-    * syllabic: a rhyme in which the last syllable of each word sounds the same but does not       necessarily contain stressed vowels. (cleaver, silver, or pitter, patter; the final syllable of the words bottle and fiddle is /l/, a liquid consonant.)
-    * imperfect (or near): a rhyme between a stressed and an unstressed syllable. (wing, caring)
-    weak (or unaccented): a rhyme between two sets of one or more unstressed syllables. (hammer, carpenter)
-    * semirhyme: a rhyme with an extra syllable on one word. (bend, ending)
-    * forced (or oblique): a rhyme with an imperfect match in sound. (green, fiend; one, thumb)
-    * assonance: matching vowels. (shake, hate) Assonance is sometimes referred to as slant rhymes, along with consonance.
-    * consonance: matching consonants. (rabies, robbers)
-    * half rhyme (or slant rhyme): matching final consonants. (hand , lend)
-    * pararhyme: all consonants match. (tick, tock)
-    * alliteration (or head rhyme): matching initial consonants. (ship, short)
-    */
-
-    // TODO other types Optionality,
-        //e.g. "/x /x [xx, //]" would mean EITHER "/x /x xx" or "/x /x //"
-        
-
-    
 }
 

@@ -4,58 +4,60 @@ project(rhyme_and_meter)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-# # START EMSCRIPTEN ADD
+add_library(phonetic ${CMAKE_SOURCE_DIR}/external/phonetic/src/phonetic.cpp)
+target_include_directories(phonetic PUBLIC ${CMAKE_SOURCE_DIR}/external/phonetic/include)
+set(CMU_DICT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/external/phonetic/data/CMUdict/cmudict-0.7b")
+target_compile_definitions(phonetic PUBLIC CMU_DICT_PATH="${CMU_DICT_PATH}")
 
-#   # Ensure we're using Emscripten compilers
+# Detect or configure for Emscripten
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(EMSCRIPTEN ON)
+    message(STATUS "Emscripten detected. Configuring for WebAssembly build.")
+else()
+    set(EMSCRIPTEN OFF)
+    message(STATUS "Standard compiler detected. Configuring for native build.")
+endif()
 
-#   set(CMAKE_C_COMPILER emcc)
-#   set(CMAKE_CXX_COMPILER em++)
+if(EMSCRIPTEN)
+  # Set optimization flags for Release builds
+  set(CMAKE_CXX_FLAGS "-O3")
 
+  add_executable(rhyme-and-meter src/main.cpp src/Rhyme_and_Meter.cpp src/VowelHexGraph.cpp)
 
-#   # Specify the Emscripten toolchain file BEFORE the project() call
-#   set(CMAKE_TOOLCHAIN_FILE "/usr/local/Cellar/emscripten/3.1.61/libexec/cmake/Modules/Platform/Emscripten.cmake")
+  target_link_libraries(rhyme-and-meter phonetic)
+  add_library(phonetic ${CMAKE_SOURCE_DIR}/external/phonetic/src/phonetic.cpp)
+  target_include_directories(phonetic PRIVATE ${CMAKE_SOURCE_DIR}/external/phonetic/include)
 
-#   # # Set optimization flags for Release builds
-#   # set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-#   set(CMAKE_CXX_FLAGS "-O3") # Optimize for performance
+  # Include headers
+  target_include_directories(rhyme-and-meter PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
+  # Add Emscripten-specific flags to output WASM
+  set_target_properties(rhyme-and-meter PROPERTIES
+      LINK_FLAGS "-fexceptions -lembind -s INVOKE_RUN=0 -s MODULARIZE=1 --preload-file ${CMAKE_SOURCE_DIR}/data/cmudict-0.7b@/data/cmudict-0.7b -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]'"
+  )
 
-#   # # Ensure CMake uses the Release configuration
-#   # set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+else()
+  # START NORMAL TESTING BUILD
 
-#   add_executable(rhyme-and-meter src/main.cpp src/CMU_Dict.cpp src/VowelHexGraph.cpp)
+  # FetchContent setup to download Catch2
+  include(FetchContent)
 
-#   # Include headers
-#   target_include_directories(rhyme-and-meter PUBLIC ${CMAKE_SOURCE_DIR}/include)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.7.1
+  )
 
-#   # Add Emscripten-specific flags to output WASM
-#   set_target_properties(rhyme-and-meter PROPERTIES
-#       LINK_FLAGS "-fexceptions -lembind -s INVOKE_RUN=0 -s MODULARIZE=1 --preload-file ${CMAKE_SOURCE_DIR}/data/cmudict-0.7b@/data/cmudict-0.7b -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\"]'"
-#   )
+  FetchContent_MakeAvailable(Catch2)
 
-# # END EMSCRIPTEN ADD
+  # Main application
+  add_subdirectory(src)
 
+  # Enable testing
+  enable_testing()
 
-# START NORMAL TESTING BUILD
+  # Test directory
+  add_subdirectory(tests)
 
-# FetchContent setup to download Catch2
-include(FetchContent)
-
-FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.7.1
-)
-
-FetchContent_MakeAvailable(Catch2)
-
-# Main application
-add_subdirectory(src)
-
-# Enable testing
-enable_testing()
-
-# Test directory
-add_subdirectory(tests)
-
-# END NORMAL TESTING BUILD
+  # END NORMAL TESTING BUILD
+endif()

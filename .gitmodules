@@ -1,0 +1,3 @@
+[submodule "external/phonetic"]
+	path = external/phonetic
+	url = https://github.com/peterchinman/phonetic/

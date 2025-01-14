@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "VowelHexGraph.h"
+#include "vowelhexgraph.hpp"
 #include <string>
 #include <vector>
 

@@ -1,10 +1,9 @@
 # Add the test executable
-add_executable(tests testCMU_DICT.cpp testVowelHexGraph.cpp ${CMAKE_SOURCE_DIR}/src/CMU_Dict.cpp ${CMAKE_SOURCE_DIR}/src/VowelHexGraph.cpp)
+add_executable(tests testCMU_DICT.cpp testVowelHexGraph.cpp ${CMAKE_SOURCE_DIR}/src/Rhyme_and_Meter.cpp ${CMAKE_SOURCE_DIR}/src/VowelHexGraph.cpp)
 
-
-# Link the test executable with Catch2
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
-
+target_link_libraries(tests phonetic
+                        Catch2::Catch2WithMain )
+                        
 # Include directories for the test files
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
 

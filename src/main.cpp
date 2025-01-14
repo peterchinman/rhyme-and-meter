@@ -1,7 +1,7 @@
-#include "CMU_Dict.h"
-#include "convenience.h"
-#include "VowelHexGraph.h"
-#include "Hirschberg.hpp"
+#include "rhyme_and_meter.hpp"
+#include "convenience.hpp"
+#include "vowelhexgraph.hpp"
+#include "hirschberg.hpp"
 #include <iostream>
 #include <chrono>
 #include <sstream>
@@ -24,8 +24,7 @@ void print_pair(std::pair< std::vector<std::string>, std::vector<std::string> > 
 }
 // FUNCTION TO OUTPUT TO CHECK METER
 int main() {
-    CMU_Dict dict{};
-    dict.import_dictionary();
+    Rhyme_and_Meter dict{};
     std::string phones1 {"B AA1 R K"};
     std::string phones2 {"B AA1 R K IH0 NG"};
     std::string phones3 {"K IH1 NG"};

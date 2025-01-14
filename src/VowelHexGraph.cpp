@@ -1,4 +1,4 @@
-#include "VowelHexGraph.h"
+#include "vowelhexgraph.hpp"
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>

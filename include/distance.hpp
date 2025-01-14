@@ -1,7 +1,7 @@
 #pragma once
 
-#include "convenience.h"
-#include "VowelHexGraph.h"
+#include "convenience.hpp"
+#include "vowelhexgraph.hpp"
 
 #include <iostream>
 #include <vector>

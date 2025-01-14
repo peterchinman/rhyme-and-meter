@@ -2,10 +2,10 @@
 #include <emscripten/bind.h>
 #endif
 
-#include "CMU_Dict.h"
-#include "convenience.h"
-#include "Hirschberg.hpp"
-#include "Distance.h"
+#include "rhyme_and_meter.hpp"
+#include "hirschberg.hpp"
+#include "distance.hpp"
+#include "phonetic.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -16,127 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-CMU_Dict::CMU_Dict() {
-    import_dictionary();
-}
-
-bool CMU_Dict::import_dictionary() {
-    const std::string file_path{"../data/CMUdict/cmudict-0.7b"};
-
-    #ifdef __EMSCRIPTEN__   
-    file_path = "/data/cmudict-0.7b";
-    #endif
-    
-    
-    std::ifstream cmudict{file_path};
-    if (!cmudict.is_open()) {
-        std::cerr << "Failed to open the dictionary." << '\n';
-        return false;
-    }
-    std::string line;
-    while (std::getline(cmudict, line)) {
-        // ignore leading ;
-        if(line.empty() || line[0] == ';') {
-            continue;
-        }
-
-        std::istringstream iss(line);
-
-        // extract word up to white space   
-        std::string word;
-        iss >> word;
-
-        // strip variation "(n)", used in CMU DICT for multiple entries of same word
-        // instead each pronunciation is added to the vector m_dictionary[word]
-        if (word.back() == ')'){
-            word.pop_back();
-            word.pop_back();
-            word.pop_back();
-        }
-       
-        // pronunciation is ARPABET symbols, separated by spaces
-        // vowels end with a number indicating stress, 0 no stress, 1 primary stress, 2 secondary stress
-        std::string pronunciation;
-        std::getline(iss, pronunciation);
-
-        // trim white space
-        ltrim(pronunciation);
-        rtrim(pronunciation);
-
-        m_dictionary[word].push_back(pronunciation);
-    }
-
-    cmudict.close();
-    return true;
-}
-
-// throws a std::exception if word not found
-std::vector<std::string> CMU_Dict::word_to_phones(std::string word) {
-    // capitalize all queries
-    std::transform(word.begin(), word.end(), word.begin(), ::toupper);
-    auto it = m_dictionary.find(word);
-    if (it != m_dictionary.end()) {
-        return it->second;
-    }
-    else {
-        throw std::runtime_error(word + " not found in dictionary.");
-    }
-}
-
-std::vector<std::pair<std::vector<std::string>, bool>> CMU_Dict::text_to_phones(const std::string & text) {
-
-    std::vector<std::pair<std::vector<std::string>, bool>> results{};
-    std::vector<std::string> words {strip_punctuation(text)};
-
-    for (const auto & w : words) {
-        try {
-            std::vector<std::string> phones{word_to_phones(w)};
-            results.emplace_back(phones, true);
-        } catch (const std::exception &) {
-            std::vector<std::string> word_searched_for{};
-            word_searched_for.emplace_back(w);
-            results.emplace_back(word_searched_for, false);
-        }
-    }
-
-    return results;
-}
-
-
-std::string CMU_Dict::phone_to_stress(const std::string& phones) {
-    std::string stresses{};
-    for (const auto & c : phones){
-        if (c == '0' || c == '1' || c == '2') {
-            stresses.push_back(c);
-        }
-    }
-    return stresses;
-}
-
-std::vector<std::string> CMU_Dict::word_to_stresses(const std::string& word) {
-    std::vector<std::string> stresses{};
-
-    std::vector<std::string> phones{word_to_phones(word)};
-    for (const auto & p : phones) {
-        stresses.emplace_back(phone_to_stress(p));
-    }
-    return stresses;
-}
-
-int CMU_Dict::phone_to_syllable_count(const std::string& phones) {
-    return static_cast<int>(phone_to_stress(phones).length());
-}
-
-std::vector<int> CMU_Dict::word_to_syllables(const std::string& word) {
-    std::vector<int> syllables;
-    std::vector<std::string> phones{word_to_phones(word)};
-    for(const auto & p : phones) {
-        syllables.emplace_back(phone_to_syllable_count(p));
-    }
-    return syllables;
-}
-
-std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string& meter){
+std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std::string& meter){
     // the pair here is so we can record whether this specific optional path is currently ACTIVE
     // initialize it with an empty vec and false, so that it's loaded up and ready to go;
     std::vector<std::pair<std::vector<int>, bool>> possible_paths{std::make_pair(std::vector<int>{}, false)};
@@ -221,7 +101,7 @@ std::set<std::vector<int>> CMU_Dict::fuzzy_meter_to_binary_set(const std::string
     return meters_set;
 }
 
-CMU_Dict::Check_Validity_Result CMU_Dict::check_meter_validity(const std::string& text, const std::string& meter_to_check) {
+Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(const std::string& text, const std::string& meter_to_check) {
 
     Check_Validity_Result result{};
 
@@ -234,7 +114,7 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_meter_validity(const std::string
         }
     }
     
-    auto phones{text_to_phones(text)};
+    auto phones{dict.text_to_phones(text)};
 
     // as we go into this loop over each word in the text here we need two vec of vec<int>s:
         // 1. our reference copy of meters
@@ -253,10 +133,9 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_meter_validity(const std::string
 
         // we keep a record of stress patterns we've seen so that we don't cause unnecessary forks
         std::unordered_set<std::string> stress_patterns_observed{};
-
         // iterate over each pronunciation of this word
         for( const auto & pronunciation : word.first) {
-            std::string stress_pattern = phone_to_stress(pronunciation);
+            std::string stress_pattern = dict.phone_to_stress(pronunciation);
             const auto check_insert = stress_patterns_observed.insert(stress_pattern);
             // if insert failed it's because we've seen this stress pattern before and we can skip this pronunciation;
             if (check_insert.second == false) {
@@ -370,7 +249,7 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_meter_validity(const std::string
     
 }
 
-CMU_Dict::Check_Validity_Result CMU_Dict::check_syllable_validity(const std::string& text, int syllable_count) {
+Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(const std::string& text, int syllable_count) {
 
     Check_Validity_Result result{};
     
@@ -382,7 +261,7 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_syllable_validity(const std::str
             // we need a different branch for each possible syllable count
 
     std::vector<int> syllable_count_paths{syllable_count};
-    auto phones{text_to_phones(text)};
+    auto phones{dict.text_to_phones(text)};
 
     // as we go into this loop over each word in the text here we need two vec<int>s:
         // 1. our reference copy of the syllable_count
@@ -404,7 +283,7 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_syllable_validity(const std::str
 
         for (const auto & pronunciation : word.first) {
 
-            int pronunciation_syllable_count = phone_to_syllable_count(pronunciation);
+            int pronunciation_syllable_count = dict.phone_to_syllable_count(pronunciation);
 
             // if we've already come across this syllable count, skip
             if (std::find(syllable_counts_observed.begin(), syllable_counts_observed.end(), pronunciation_syllable_count) != syllable_counts_observed.end()) {
@@ -451,44 +330,7 @@ CMU_Dict::Check_Validity_Result CMU_Dict::check_syllable_validity(const std::str
     return result;
 }
 
-std::string CMU_Dict::get_rhyming_part(const std::string& phones) {
-    std::string result{};
-    // if we were using C++23 we could use std::ranges::find_last_if, but we're not
-
-    // get a reverse iterator pointing at the number in the last stressed vowel
-    auto r_it {std::find_if(phones.rbegin(), phones.rend(), [](char c) {
-        return std::isdigit(c) && c != '0';
-    })};
-    // if we found it
-    if (r_it != phones.rend()) {
-        // move it up to the first char of our vowel
-        r_it += 2;
-        // turn it around
-        // base moves us one to the right, so we got to step it back
-        auto f_it = r_it.base() - 1;
-        std::copy(f_it, phones.end(), std::back_inserter(result));
-        return result;
-    }
-    // but if the word has no stresses, we'll return from just the last vowel onward
-    auto no_stress_r_it {std::find_if(phones.rbegin(), phones.rend(), [](char c) {
-        return std::isdigit(c);
-    })};
-
-    if (no_stress_r_it != phones.rend()) {
-        // move it up to the first char of our vowel
-        no_stress_r_it += 2;
-        // turn it around
-        // base moves us one to the right, so we got to step it back
-        auto f_it = no_stress_r_it.base() - 1;
-        std::copy(f_it, phones.end(), std::back_inserter(result));
-        return result;
-    }
-
-    // else, there are no vowels at all, so we return an empty string
-    return result;
-}
-
-std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2) {
+std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Meter::compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2) {
     std::pair< std::vector< std::string >, std::vector< std::string > > result{};
 
     // get the last word of each line
@@ -505,30 +347,30 @@ std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::co
     }
     // get pronunciations of each word
     // TODO handle exceptions
-    std::vector< std::string > pronunciations1 {word_to_phones(last_word1)};
-    std::vector< std::string > pronunciations2 {word_to_phones(last_word2)};
+    std::vector< std::string > pronunciations1 {dict.word_to_phones(last_word1)};
+    std::vector< std::string > pronunciations2 {dict.word_to_phones(last_word2)};
 
     // get rhyming part of each pronunciation
     std::vector< std::string > rhyming_parts1{};
     std::vector< std::string > rhyming_parts2{};
 
     for (const auto& p : pronunciations1) {
-        rhyming_parts1.emplace_back(get_rhyming_part(p));
+        rhyming_parts1.emplace_back(dict.get_rhyming_part(p));
     }
     for (const auto& p : pronunciations2) {
-        rhyming_parts2.emplace_back(get_rhyming_part(p));
+        rhyming_parts2.emplace_back(dict.get_rhyming_part(p));
     }
 
     // get syllable length of shortest rhyming part
-    int shortest_length{phone_to_syllable_count(rhyming_parts1[0])};
+    int shortest_length{dict.phone_to_syllable_count(rhyming_parts1[0])};
     for(const auto& r : rhyming_parts1){
-        if (phone_to_syllable_count(r) < shortest_length) {
-            shortest_length = phone_to_syllable_count(r);
+        if (dict.phone_to_syllable_count(r) < shortest_length) {
+            shortest_length = dict.phone_to_syllable_count(r);
         }
     }
     for(const auto& r : rhyming_parts2){
-        if (phone_to_syllable_count(r) < shortest_length) {
-            shortest_length = phone_to_syllable_count(r);
+        if (dict.phone_to_syllable_count(r) < shortest_length) {
+            shortest_length = dict.phone_to_syllable_count(r);
         }
     }
     // cut off front of each rhyming part until they are the length of shortest rhyming part
@@ -538,7 +380,7 @@ std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::co
     // std::vector<std::string> clipped_parts2{};
 
     for(auto& r : rhyming_parts1) {
-        if (phone_to_syllable_count(r) > shortest_length) {
+        if (dict.phone_to_syllable_count(r) > shortest_length) {
             // get a reverse iterator pointing at the number in the last stressed vowel
             auto r_it {std::find_if(r.rbegin(), r.rend(), [](char c) {
                 return std::isdigit(c) && c != '0';
@@ -562,7 +404,7 @@ std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::co
     }
     // TODO: DRY
     for(auto& r : rhyming_parts2) {
-        if (phone_to_syllable_count(r) > shortest_length) {
+        if (dict.phone_to_syllable_count(r) > shortest_length) {
             // get a reverse iterator pointing at the number in the last stressed vowel
             auto r_it {std::find_if(r.rbegin(), r.rend(), [](char c) {
                 return std::isdigit(c);
@@ -592,7 +434,7 @@ std::pair< std::vector< std::string >, std::vector< std::string > > CMU_Dict::co
     
 }
 
-int CMU_Dict::minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > > & rhyming_part_pairs) {
+int Rhyme_and_Meter::minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > > & rhyming_part_pairs) {
     int minimum_distance{};
     bool first_flag{};
 
@@ -614,7 +456,7 @@ int CMU_Dict::minimum_end_rhyme_distance( const std::pair< std::vector< std::str
     return minimum_distance;
 }
 
-int CMU_Dict::get_end_rhyme_distance(const std::string& line1, const std::string&line2) {
+int Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std::string&line2) {
     return minimum_end_rhyme_distance(compare_end_line_rhyming_parts(line1, line2));
 }
 
@@ -625,16 +467,16 @@ EMSCRIPTEN_BINDINGS(my_module) {
     emscripten::register_vector<std::string>("StringVector");
 
 
-    emscripten::class_<CMU_Dict>("CMU_Dict")
+    emscripten::class_<Rhyme_and_Meter>("Rhyme_and_Meter")
         .constructor<>()
-        .function("check_syllable_validity", &CMU_Dict::check_syllable_validity)
-        .function("check_meter_validity", &CMU_Dict::check_meter_validity)
-        .function("get_end_rhmye_distance", &CMU_Dict::get_end_rhyme_distance)
+        .function("check_syllable_validity", &Rhyme_and_Meter::check_syllable_validity)
+        .function("check_meter_validity", &Rhyme_and_Meter::check_meter_validity)
+        .function("get_end_rhmye_distance", &Rhyme_and_Meter::get_end_rhyme_distance)
         ;
 
-    emscripten::value_object<CMU_Dict::Check_Validity_Result>("Check_Validity_Result")
-        .field("is_valid", &CMU_Dict::Check_Validity_Result::is_valid)
-        .field("unrecognized_words", &CMU_Dict::Check_Validity_Result::unrecognized_words)
+    emscripten::value_object<Rhyme_and_Meter::Check_Validity_Result>("Check_Validity_Result")
+        .field("is_valid", &Rhyme_and_Meter::Check_Validity_Result::is_valid)
+        .field("unrecognized_words", &Rhyme_and_Meter::Check_Validity_Result::unrecognized_words)
         ;
 
     

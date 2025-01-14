@@ -1,5 +1,5 @@
 # Add the test executable
-add_executable(tests testCMU_DICT.cpp testVowelHexGraph.cpp ${CMAKE_SOURCE_DIR}/src/Rhyme_and_Meter.cpp ${CMAKE_SOURCE_DIR}/src/VowelHexGraph.cpp)
+add_executable(tests test_rhyme_and_meter.cpp test_vowel_hex_graph.cpp ${CMAKE_SOURCE_DIR}/src/rhyme_and_meter.cpp ${CMAKE_SOURCE_DIR}/src/vowelhexgraph.cpp)
 
 target_link_libraries(tests phonetic
                         Catch2::Catch2WithMain )

@@ -66,15 +66,18 @@ public:
     Check_Validity_Result check_syllable_validity(const std::string& text, int syllable_count);
 
     /**
-     * First, gets pronunciations of the last words of each line.
+     * Takes two lines and returns comparable rhyming parts. Currently uses the shortest rhyming part.
+     * 
+     * TODO: take the rhyming part from the first, apply it to the second.
      * 
      * TODO: If we know the meter, we want to choose the pronunciation that matches that meter. 
      * 
-     * TODO: run thru all possible lengths of rhyming parts. 
      * 
      * E.g. We'd like to be able to check "poet" against "know it"
      * 
-     * MVP: take the shortest rhyming part and return of pair of possible pronunciations of that length of the end of each line.
+     * MVP: 
+     * 
+     * TODO: 
      * 
      * 
      * 
@@ -86,6 +89,8 @@ public:
     
     /**
      * Given the possible pronunciations of the rhmying parts of the end of two lines, returns the minimum rhmying distance between them.
+     * 
+     * TODO: Account for length of rhmying part. This should probably return an average of the distance over the syllable length?
      *
      * TODO: Accept user definined key/value pairs of unknown words + known words that they rhyme with, for graceful error correction. 
      * 

@@ -84,7 +84,7 @@ void VowelHexGraph::initialize(){
        * OPIONATED /ER/ ADJACENCY:
        * 
        * 2. ER as in BIRD is adjacent to:
-       *    AH as in BUT:  1
+       *    AH as in BUT
        */
       add_edge("ER", "AH");
 
@@ -98,9 +98,9 @@ void VowelHexGraph::initialize(){
        * I am making some extremely opinionated decisions here:
        * 
        * 1. AW as in BOUT is adjacent to:
-       *    UH as in BUSH: 1
-       *    OW as in BOAT: 1
-       *    AH as in BUT:  1
+       *    UH as in BUSH
+       *    OW as in BOAT
+       *    AH as in BUT
        *    AA : 2 (satisfied by AH adjacency) ((if you were to get rid of that you'd need to somehow set a distance, e.g. by introducing a notion of distance into edges))
        *    AE : 2 (see above)
        */
@@ -110,9 +110,9 @@ void VowelHexGraph::initialize(){
       /**
        * 
        * 2. AY as in BITE is adjacent to:
-       *    IH as in BIT:  1 
-       *    EY as in BAIT: 1
-       *    AH as in BUT:  1
+       *    IH as in BIT 
+       *    EY as in BAIT
+       *    AH as in BUT
        *    AA : 2 (satisfied by AH adjacency) ((if you were to get rid of that you'd need to somehow set a distance, e.g. by introducing a notion of distance into edges))
        *    AE : 2 (see above)
        */
@@ -121,28 +121,28 @@ void VowelHexGraph::initialize(){
       add_edge("AY", "AH");
       /**
        * 3. EY as in BAIT is adjacent to:
-       *    AY as in BITE: 1 *redundant
-       *    IH as in BIT:  1
-       *    EH as in BET:  1
-       *    IY as in BEAT: 1
+       *    AY as in BITE *redundant
+       *    IH as in BIT
+       *    EH as in BET
+       *    IY as in BEAT
        */
       add_edge("EY", "IH");
       add_edge("EY", "EH");
       add_edge("EY", "IY");
       /** 4. OW as in BOAT is adjacent to:
-       *    OY as in BOY:  1
-       *    AW as in BOUT: 1 *redundant
-       *    UH as in BUSH: 1
-       *    UW as in BOOT: 1
-       *    AO as in BOMB: 1
+       *    OY as in BOY
+       *    AW as in BOUT *redundant
+       *    UH as in BUSH
+       *    UW as in BOOT
+       *    AO as in BOMB
        */
       add_edge("OW", "OY");
       add_edge("OW", "UH");
       add_edge("OW", "UW");
       add_edge("OW", "AO");
       /* 5. OY as in BOY is adjacent to:
-      *    IH as in BIT:  1
-      *    OW as in BOAT: 1 *redundant
+      *    IH as in BIT
+      *    OW as in BOAT *redundant
       */
       add_edge("OY", "IH");
 

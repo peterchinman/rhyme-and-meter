@@ -21,11 +21,12 @@ CMU_Dict::CMU_Dict() {
 }
 
 bool CMU_Dict::import_dictionary() {
-    // for Emscripten
-    // const std::string file_path{"/data/cmudict-0.7b"};
+    const std::string file_path{"../data/CMUdict/cmudict-0.7b"};
 
-    // for Normal Use
-    const std::string file_path{"../data/cmudict-0.7b"};
+    #ifdef __EMSCRIPTEN__   
+    file_path = "/data/cmudict-0.7b";
+    #endif
+    
     
     std::ifstream cmudict{file_path};
     if (!cmudict.is_open()) {
@@ -70,7 +71,6 @@ bool CMU_Dict::import_dictionary() {
 }
 
 // throws a std::exception if word not found
-// TODO THIS IS A BADLY NAMED FUNCTION!!
 std::vector<std::string> CMU_Dict::word_to_phones(std::string word) {
     // capitalize all queries
     std::transform(word.begin(), word.end(), word.begin(), ::toupper);

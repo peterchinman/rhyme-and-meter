@@ -304,6 +304,15 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string penelope = "Penelope";
         int bleed_penelope = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(bleed, penelope));
         REQUIRE(bleed_penelope == GAP_PENALTY() + SUBSTITUTION_SCORE("IY1", "IY0"));
+        // Vowel Distance + 1 Insertions
+        // TODO check vowel stresses
+        //   AO R    AH N JH
+        // D AO R HH IH N JH
+        // 
+        std::string orange = "orange";
+        std::string door_hinge = "door_hinge";
+        int orange_doorhinge = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(orange, door_hinge));
+        REQUIRE(orange_doorhinge == GAP_PENALTY() * 1 + SUBSTITUTION_SCORE("AH0", "IH1"));
         // Vowel Distance + 2 Insertions
         // UH1 L     IY0
         // AO1 L T R IY0

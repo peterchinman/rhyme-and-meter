@@ -1,7 +1,8 @@
 #pragma once
 
 #include "convenience.hpp"
-#include "vowelhexgraph.hpp"
+#include "vowel_hex_graph.hpp"
+#include "consonant_distance.hpp"
 
 #include <iostream>
 #include <vector>
@@ -21,8 +22,7 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
       return MATCH_SCORE;
    }
 
-   // std::cout << "Comparing" << s1 << " & " << s2 << std::endl;
-   // Check whether both are vowels
+   // BOTH ARE VOWELS
    else if (std::isdigit(s1.back()) && std::isdigit(s2.back())) {
       // std::cout<< "Both are vowels." << std::endl;
 
@@ -48,13 +48,13 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
          // TODO should we return vowel_distance itself, or scale it in some way
          // Should there be a penalty for vowels having different stresses?
          if (stress1 != stress2) {
-            return vowel_distance - 1; 
+            return vowel_distance + 1; 
          }
          return vowel_distance;
 
       }
    }
-   // At least one of them is a consonant
+   // AT LEAST ONE CONSONANT
    else {
       // Mismatch vowel to consonant, which we never want to happen??
       if (std::isdigit(s1.back()) || std::isdigit(s2.back())) {

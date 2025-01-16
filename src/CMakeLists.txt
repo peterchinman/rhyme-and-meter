@@ -1,4 +1,4 @@
-add_executable(rhyme-and-meter main.cpp rhyme_and_meter.cpp vowelhexgraph.cpp)
+add_executable(rhyme-and-meter main.cpp rhyme_and_meter.cpp vowel_hex_graph.cpp consonant_distance.cpp)
 
 target_link_libraries(rhyme-and-meter phonetic)
 

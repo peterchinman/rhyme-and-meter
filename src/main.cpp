@@ -1,6 +1,6 @@
 #include "rhyme_and_meter.hpp"
 #include "convenience.hpp"
-#include "vowelhexgraph.hpp"
+#include "vowel_hex_graph.hpp"
 #include "hirschberg.hpp"
 #include <iostream>
 #include <chrono>

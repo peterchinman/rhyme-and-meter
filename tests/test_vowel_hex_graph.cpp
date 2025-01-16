@@ -1,11 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
-#include "vowelhexgraph.hpp"
+#include "vowel_hex_graph.hpp"
 #include <string>
 #include <vector>
 
 struct VowelFixture {
-    // mutable VowelHexGraph vowel_hex_graph{};
-
     VowelFixture() {
         VowelHexGraph::initialize();
     }

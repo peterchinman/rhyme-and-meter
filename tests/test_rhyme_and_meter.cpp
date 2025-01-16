@@ -10,6 +10,7 @@
 struct Fixture {
     mutable Rhyme_and_Meter dict;
     mutable VowelHexGraph vowel_hex_graph{};
+    mutable ConsonantDistance ConsonantDistance{};
     // bool import_success{};
 
     // Fixture() {
@@ -139,7 +140,10 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // two consonant swaps
         std::string phones1 = "K IH1 T AH0 N";
         std::string phones2 = "S IH1 T IH0 NG";
-        REQUIRE(levenshtein_distance(phones1, phones2) == 11);
+        REQUIRE(levenshtein_distance(phones1, phones2) ==
+                ConsonantDistance::get_distance("K", "S")
+                + VowelHexGraph::get_distance("AH0", "IH0")
+                + ConsonantDistance::get_distance("N", "NG"));
 
         // two insertions
         phones1 = "B AA1 R K";
@@ -200,8 +204,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(bleed_penelope == GAP_PENALTY() + SUBSTITUTION_SCORE("IY1", "IY0"));
         // Vowel Distance + 1 Insertions
         // TODO check vowel stresses
-        //   AO R    AH N JH
-        // D AO R HH IH N JH
+        //   AO1 R    IH0 N JH
+        // D AO1 R HH IH1 N JH
         // 
         std::string orange = "orange";
         std::string door_hinge = "door hinge";
@@ -209,6 +213,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // preferred behavior is probably to take the length of the first term
         int orange_doorhinge = dict.minimum_end_rhyme_distance(dict.compare_end_line_rhyming_parts(orange, door_hinge));
         // REQUIRE(orange_doorhinge == GAP_PENALTY() * 1 + SUBSTITUTION_SCORE("AH0", "IH1"));
+
         // Vowel Distance + 2 Insertions
         // UH1 L     IY0
         // AO1 L T R IY0

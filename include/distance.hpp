@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+// FOR INSERTIONS AND DELETIONS
 inline int GAP_PENALTY() {
    return 10;
 }
@@ -14,9 +15,8 @@ inline int GAP_PENALTY() {
 // TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches.
 inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
    const int MATCH_SCORE = 0;
-   const int SAME_VOWEL_DIFFERENT_STRESS = 1;
+   const int STRESS_PENALTY = 1;
    const int VOWEL_TO_CONSONANT_MISMATCH = 30;
-   const int CONSONANT_MISMATCH = 5;
 
    if (s1 == s2) {
       return MATCH_SCORE;
@@ -24,7 +24,6 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
 
    // BOTH ARE VOWELS
    else if (std::isdigit(s1.back()) && std::isdigit(s2.back())) {
-      // std::cout<< "Both are vowels." << std::endl;
 
       std::string v1{s1};
       std::string v2{s2};
@@ -34,21 +33,17 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
       v2.pop_back();
 
       // same vowel different stress
-      if(v1 == v2) {
+      if(v1 == v2 && stress1 != stress2) {
          // std::cout << "Same vowel but different stress." << std::endl;
 
-         return SAME_VOWEL_DIFFERENT_STRESS;
+         return STRESS_PENALTY;
       }
       else {
          // Check vowel distance.
          VowelHexGraph::initialize();
          int vowel_distance{VowelHexGraph::get_distance(v1, v2)};
-         // std::cout << "Vowel distance is: " << vowel_distance << std::endl;
-
-         // TODO should we return vowel_distance itself, or scale it in some way
-         // Should there be a penalty for vowels having different stresses?
          if (stress1 != stress2) {
-            return vowel_distance + 1; 
+            return vowel_distance + STRESS_PENALTY; 
          }
          return vowel_distance;
 
@@ -63,9 +58,8 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
    
       // both consonants
       else {
-         // TODO implement consonant distance
-         // for now
-         return CONSONANT_MISMATCH;
+         ConsonantDistance::initialize;
+         return ConsonantDistance::get_distance(s1, s2);
       }
    }
 }

@@ -23,7 +23,7 @@ if(EMSCRIPTEN)
   # Set optimization flags for Release builds
   set(CMAKE_CXX_FLAGS "-O3")
 
-  add_executable(rhyme-and-meter src/main.cpp src/rhyme_and_meter.cpp src/vowel_hex_graph.cpp)
+  add_executable(rhyme-and-meter src/main.cpp src/rhyme_and_meter.cpp src/vowel_hex_graph.cpp src/consonant_distance.cpp)
 
   target_link_libraries(rhyme-and-meter phonetic)
   # Include headers

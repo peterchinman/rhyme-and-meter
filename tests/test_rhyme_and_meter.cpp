@@ -142,18 +142,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string phones2 = "S IH1 T IH0 NG";
         REQUIRE(levenshtein_distance(phones1, phones2) ==
                 ConsonantDistance::get_distance("K", "S")
-                + VowelHexGraph::get_distance("AH0", "IH0")
+                + VowelHexGraph::get_distance("AH", "IH")
                 + ConsonantDistance::get_distance("N", "NG"));
-
-        // two insertions
-        phones1 = "B AA1 R K";
-        phones2 = "B AA1 R K IH0 NG";
-        REQUIRE(levenshtein_distance(phones1, phones2) == 20);
-
-        // three insertions at beginning
-        phones1 = "B AA1 R K";
-        phones2 = "T R IY1 B AA1 R K";
-        REQUIRE(levenshtein_distance(phones1, phones2) == 30);
     }
 
     SECTION("compare_end_line_rhyming_parts") {

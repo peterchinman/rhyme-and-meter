@@ -44,6 +44,24 @@ struct Alignment_And_Distance {
 //Useful tools
 inline int min3(int a, int b, int c);
 
+// Prints out the ZWpair that we get back from Hirschberg
+inline void print_pair(std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair ) {
+    for (const auto & symbol : ZWpair.first) {
+        std::cout << symbol;
+        for(std::size_t i{}; i < 4 - symbol.size(); ++i){
+            std::cout << " ";
+        }
+    }
+    std::cout << std::endl;
+    for (const auto & symbol : ZWpair.second) {
+        std::cout << symbol;
+        for(std::size_t i{}; i < 4 - symbol.size(); ++i){
+            std::cout << " ";
+        }
+    }
+    std::cout << std::endl;
+}
+
 //overload pair sum
 inline std::pair<std::vector<std::string>, std::vector<std::string>> operator+(std::pair<std::vector<std::string>, std::vector<std::string>> const& one, std::pair<std::vector<std::string>, std::vector<std::string>> const& two);
 

@@ -1,5 +1,10 @@
 #pragma once
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
+
+
 #include "convenience.hpp"
 #include "vowel_hex_graph.hpp"
 #include "consonant_distance.hpp"
@@ -121,3 +126,9 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
 
     return prev[len2];
 }
+
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_BINDINGS(my_module) {
+   emscripten::function("levenshtein_distance", &levenshtein_distance);
+}
+#endif

@@ -4,7 +4,11 @@ A collection of C++ methods for checking validating poetic rhmye and meter. Comp
 
 ## Intro
 
-Uses my [Phonetic](https://github.com/peterchinman/phonetic/) library to get pronunciations using the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict#about). For the rhyme checking, we calcuate a "rhyme distance", using a notion of "vowel distance" and techniques from bio-informatics to align string sequences. The meter checking is a minimum validation that a certain meter could match a certain line, without trying to guess what the actual meter of the text is. [More information here](https://peterchinman.com/blog/strictly).
+Uses my [Phonetic](https://github.com/peterchinman/phonetic/) library to get pronunciations using the [CMU Pronouncing Dictionary](http://www.speech.cs.cmu.edu/cgi-bin/cmudict#about). For the rhyme checking, we calcuate a "rhyme distance", using a notion of "vowel distance", "consonant distance" and techniques from bio-informatics to align string sequences.
+
+The meter checking is a minimum validation that a certain meter could match a certain line, without trying to guess what the actual meter of the text is. 
+
+[More information here.](https://peterchinman.com/blog/strictly)
 
 ## Build
 
@@ -81,15 +85,17 @@ Returns a `Check_Validity_Result` object, containing a bool `is_valid` and a vec
 
 ###  `Rhyme_and_Meter::get_end_rhyme_distance()`
 
-Compares the end rhymes of two lines and returns the "rhyme distance". Currently, this looks at the shortest rhyming-part from between the last word of the two lines. 
+Compares the end rhymes of two lines and returns the "rhyme distance". Currently, this takes as its comparison unit the at the shortest rhyming-part from between the last word of the two lines.
 
-Scoring:
+Scoring, roughly:
 
     0     => perfect rhyme!
-    1-5   => pretty dang close, only vowel sound different!
-    6-10  => pretty close, consonant differences
-    11-20 => further consonant differences
-    20+   => noisy, hard to use for information
+    1-5   => pretty dang close!
+    6-10  => close!
+    11-20 => further!
+    20+   => noisy!
+
+(Note / TODO: these number guides probably need to be updated now.)
 
 ### `levenshtein_distance()`
 

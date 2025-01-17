@@ -21,6 +21,13 @@ struct Fixture {
 
 
 TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
+    
+    SECTION("word_to_phones wrapper"){
+        std::string word("karaoke");
+        auto phones_vec = dict.word_to_phones(word);
+        REQUIRE(phones_vec[0] == "K EH2 R IY0 OW1 K IY0");
+
+    }
    
     SECTION("fuzzy_meter_to_binary_set") {
         std::string meter{"x/x/x/x/(x/)"};

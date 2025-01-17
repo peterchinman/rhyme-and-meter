@@ -18,7 +18,7 @@ inline int GAP_PENALTY() {
 }
 
 // TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches.
-inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
+inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, float consonant_multipler = 1) {
    const int MATCH_SCORE = 0;
    const int STRESS_PENALTY = 1;
    const int VOWEL_TO_CONSONANT_MISMATCH = 30;
@@ -64,7 +64,7 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
       // both consonants
       else {
          ConsonantDistance::initialize;
-         return ConsonantDistance::get_distance(s1, s2);
+         return ConsonantDistance::get_distance(s1, s2) * consonant_multipler;
       }
    }
 }
@@ -72,9 +72,6 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
 
 /**
  * Implementation of Levenshtein distance algorithm, but comparing ARPABET symbols, instead of characters, using custom weights for gaps and substitutions based on phoneme distance.
- * 
- * 
- * TODO: this does not take consonant distance into account. E.g. /B/ and /P/ should be closer than /B/ and /SH/. This is sort of a hack to get something meaningful in the meantime. But ulitmately we should incorporate consonant distance.
  * 
  * TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches, because "most" and "moats" are more similar than the double sub penalty would seem?
  * 
@@ -127,8 +124,54 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
     return prev[len2];
 }
 
+// DUPLICATING THIS EXCLUSIVELY FOR FINETUNING THE CONSONANT MULTIPLIER
+// TODO DELETE THIS AFTER YOU FIND IT
+inline int levenshtein_distance_with_multiplier(const std::string& phones1, const std::string& phones2, float consonant_multiplier) {
+    // Early return for trivial cases
+    if (phones1.empty()) return phones2.size();
+    if (phones2.empty()) return phones1.size();
+
+    std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
+    std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
+
+    size_t len1 = symbols1.size();
+    size_t len2 = symbols2.size();
+
+    // Create two rows for dynamic programming
+    std::vector<int> prev(len2 + 1, 0);
+    std::vector<int> curr(len2 + 1, 0);
+
+    // Initialize base cases with GAP_PENALTY()
+    for (size_t j = 0; j <= len2; ++j) {
+        prev[j] = j * GAP_PENALTY();
+    }
+
+    // Fill the DP table row by row
+    for (size_t i = 1; i <= len1; ++i) {
+        // Base case, other axis
+        curr[0] = i * GAP_PENALTY();
+        for (size_t j = 1; j <= len2; ++j) {
+            // std::cout << "Comparing: " << symbols1[i-1];
+            // std::cout << " and " << symbols2[j-1] << std::endl;
+            int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1], consonant_multiplier)};
+            
+            curr[j] = std::min({ 
+                prev[j] + GAP_PENALTY(),      // Deletion
+                curr[j - 1] + GAP_PENALTY(),  // Insertion
+                prev[j - 1] + mismatch_score // Substitution
+            });
+
+            // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;
+        }
+        prev.swap(curr);
+    }
+
+    return prev[len2];
+}
+
 #ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(my_module) {
+EMSCRIPTEN_BINDINGS(distance_functions) {
    emscripten::function("levenshtein_distance", &levenshtein_distance);
+   emscripten::function("levenshtein_distance_with_muliplier", &levenshtein_distance_with_multiplier);
 }
 #endif

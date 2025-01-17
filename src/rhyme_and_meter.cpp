@@ -16,6 +16,10 @@
 #include <unordered_set>
 #include <vector>
 
+std::vector<std::string> Rhyme_and_Meter::word_to_phones(const std::string& word){
+    return dict.word_to_phones(word);
+}
+
 std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std::string& meter){
     // the pair here is so we can record whether this specific optional path is currently ACTIVE
     // initialize it with an empty vec and false, so that it's loaded up and ready to go;
@@ -461,6 +465,8 @@ int Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std:
 }
 
 
+
+
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_BINDINGS(my_module) {
 
@@ -469,6 +475,7 @@ EMSCRIPTEN_BINDINGS(my_module) {
 
     emscripten::class_<Rhyme_and_Meter>("Rhyme_and_Meter")
         .constructor<>()
+        .function("word_to_phones", &Rhyme_and_Meter::word_to_phones)
         .function("check_syllable_validity", &Rhyme_and_Meter::check_syllable_validity)
         .function("check_meter_validity", &Rhyme_and_Meter::check_meter_validity)
         .function("get_end_rhmye_distance", &Rhyme_and_Meter::get_end_rhyme_distance)

@@ -16,6 +16,8 @@ private:
 // TODO mark functions as const that don't change state
 
 public:
+
+    std::vector<std::string> word_to_phones(const std::string& word);
     
      /**
      * Convert meter in form of "x/x /x/(x /)" to a set of vector<int>, where 'x' is 0 and '/' is 1, where the set contains all the possible meters that could conform to the options.

@@ -5,7 +5,7 @@
  * 
  * Uses externally defined functions SUBSTITUTION_SCORE() and GAP_SCORE() to evaluate scores.
  * 
- * Outputs a struct containing output.ZWpair => the aligned words, as a pair of vectors of strings, as well as output.disatnce => the weighted levenshtein edit distance between strings.
+ * Outputs a struct containing output.ZWpair => the aligned words, as a pair of vectors of strings, as well as output.distance => the weighted levenshtein edit distance between strings.
  * 
  * 
  * Hirschberg Algorithm for Sequence Alignment
@@ -80,6 +80,8 @@ inline std::size_t argmin_element(const std::vector<int> score);
 
 
 //Hirschberg: main algorithm; returns alignments-pair space-efficiently
+// Feed it two vectors of strings of ARPABET phones.
+// TODO standardize this to use space-separated strings so that it aligns with CMUdict
 inline Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y);
 
 //Functions
@@ -375,3 +377,28 @@ Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::
     }
     return alignment_and_distance;
 }
+
+
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_BINDINGS(hirschberg) {
+
+    emscripten::register_vector<std::string>("StringVector");
+
+    // Bind the pair of vectors
+    emscripten::value_object<std::pair<std::vector<std::string>, std::vector<std::string>>>("StringVectorPair")
+        .field("first", &std::pair<std::vector<std::string>, std::vector<std::string>>::first)
+        .field("second", &std::pair<std::vector<std::string>, std::vector<std::string>>::second)
+    ;
+
+    // Bind the struct
+    emscripten::value_object<Alignment_And_Distance>("Alignment_And_Distance")
+        .field("ZWpair", &Alignment_And_Distance::ZWpair)
+        .field("distance", &Alignment_And_Distance::distance)
+    ;
+
+    // Bind the function
+    emscripten::function("Hirschberg", &Hirschberg);
+
+    
+}
+#endif

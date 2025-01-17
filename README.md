@@ -39,9 +39,28 @@ This will generate `rhyme-and-meter.js`, `rhyme-and-meter.wasm`, and `rhmye-and-
 - `Rhyme_and_Meter::check_syllable_validity()`
 - `Rhyme_and_Meter::check_meter_validity()`
 - `Rhyme_and_Meter::get_end_rhyme_distance()`
-
+- `levenshtein_distance()`
 
 (Note:`rhmye-and-meter.data` expects to be found in the root folder of your web project.)
+
+To use these functions in Javascript you can do something like this:
+
+    // Initialize the WebAssembly module
+    Module().then((Module) => {
+    	console.log("module initialized")
+
+    	// Create an instance of Rhyme_and_Meter class
+    	rhyme_and_meter = new Module.Rhyme_and_Meter();
+        
+    	const result_object = rhmye_and_meter.get_end_rhyme_distance(string1, string2);
+
+        if (result.is_valid) {
+            //blah blah blah
+        }
+        
+        // Or, for functions not in a class:
+        const distance = Module.levenshtein_distance(string1, string2);
+    })
 
 ## Usage
 
@@ -72,6 +91,9 @@ Scoring:
     11-20 => further consonant differences
     20+   => noisy, hard to use for information
 
+### `levenshtein_distance()`
+
+Compares two space-separated strings of CMUdict arpabet phones. 
 
 
 

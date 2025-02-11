@@ -2,6 +2,7 @@
 #include "vowel_hex_graph.hpp"
 #include <string>
 #include <vector>
+#include <algorithm>
 
 struct VowelFixture {
     VowelFixture() {

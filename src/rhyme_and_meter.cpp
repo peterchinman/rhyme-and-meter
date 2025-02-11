@@ -3,9 +3,9 @@
 #endif
 
 #include "rhyme_and_meter.hpp"
-#include "hirschberg.hpp"
+
+#include "Hirschberg.hpp"
 #include "distance.hpp"
-#include "phonetic.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -98,7 +98,7 @@ std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std:
     }
 
     std::set<std::vector<int>> meters_set;
-    for(const auto & path : possible_paths) {        
+    for(const auto & path : possible_paths) {
         meters_set.insert(path.first);
     }
 
@@ -112,12 +112,12 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
     std::vector<std::vector<int>> reference_meters{};
     {
         const auto meters_set{fuzzy_meter_to_binary_set(meter_to_check)};
-    
+
         for (const auto & meter : meters_set ) {
             reference_meters.emplace_back(meter);
         }
     }
-    
+
     auto phones{dict.text_to_phones(text)};
 
     // as we go into this loop over each word in the text here we need two vec of vec<int>s:
@@ -164,23 +164,23 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
 
                 // Our question at this point is: does this particular stress pattern match any of our Possible Meter?
 
-                // iterate over our reference_meters 
+                // iterate over our reference_meters
                 for(auto & this_meter : reference_meters) {
                     // first make sure meter.size() remaining is >= stress.size() remaining
                     if(this_meter.size() < stress_pattern.size()) {
                         // fail! skip.
                         continue;
                     }
-              
+
                     // need a flag to be able to check if this meter was valid for this stress:
                     bool meter_stress_pair_valid = true;
-                    
+
                     // step thru the stress of this pronunciation of this word
                     // we want to check the stress_pattern against stess_pattern.size worth of each meter
                     for (std::size_t i{}; i < stress_pattern.size(); ++i ) {
-                        
+
                         // THIS IS THE HEART OF THE LOGIC. CONTAINING VARIOUS EXCEPTIONS.
-                        
+
                         if (stress_pattern.at(i) == '1' || stress_pattern.at(i) == '2'){
                             // If there's a 2 stress followed by a 1 stress, we should treat the 2 as ambiguously stressed, i.e. pass it regardless of the meter.
                             // e.g. "ISCHEMIC" ("210") could fit "//x" OR "x/x"
@@ -207,7 +207,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
                             }
                         }
                         // TODO this else might make the validator too strict?? Figure out how you want to handle it.
-                        // This else make it so that multi-syllable words unstressed syllables must strictly match unstressed syllables. 
+                        // This else make it so that multi-syllable words unstressed syllables must strictly match unstressed syllables.
                         else {
                             if(this_meter.at(i) == 0) {
                                 // success
@@ -229,7 +229,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
                 }
             }
         }
-        
+
         // check if matched_meters is empty
         if (matched_meters.empty()){
             // Failure!
@@ -238,7 +238,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
         }
         // before we move on to the next word, matched_meters needs to get copied over to reference_meters
         reference_meters = matched_meters;
-        matched_meters.clear(); 
+        matched_meters.clear();
     }
 
     // OK great we've iterated thru all the words, reference_meters now contains all our remaining Possible Meters. If any of them are empty, that's a success!
@@ -250,16 +250,16 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
     }
     result.is_valid = false;
     return result;
-    
+
 }
 
 Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(const std::string& text, int syllable_count) {
 
     Check_Validity_Result result{};
-    
+
     // go thru each word in text
         // if not found in dictionary, add it to the Result
-        
+
         // go thru each pronunciation of each word in text
             // if pronunciations have different syllable counts, record these
             // we need a different branch for each possible syllable count
@@ -320,7 +320,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
 
         // before we move on to the next word, matched_meters needs to get copied over to reference_meters
         syllable_count_paths = matched_syllable_paths;
-        matched_syllable_paths.clear(); 
+        matched_syllable_paths.clear();
     }
 
     // OK great we've iterated thru all the words, syllable_count_ahts now contains all our remaining Possible Meters. If any of them == 0, that's a success!
@@ -435,7 +435,7 @@ std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Me
     return result;
 
 
-    
+
 }
 
 int Rhyme_and_Meter::minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > > & rhyming_part_pairs) {
@@ -455,7 +455,7 @@ int Rhyme_and_Meter::minimum_end_rhyme_distance( const std::pair< std::vector< s
             }
         }
     }
-    
+
 
     return minimum_distance;
 }
@@ -486,7 +486,6 @@ EMSCRIPTEN_BINDINGS(my_module) {
         .field("unrecognized_words", &Rhyme_and_Meter::Check_Validity_Result::unrecognized_words)
         ;
 
-    
+
 }
 #endif
-

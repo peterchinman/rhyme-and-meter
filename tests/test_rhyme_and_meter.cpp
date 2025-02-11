@@ -10,7 +10,7 @@
 struct Fixture {
     mutable Rhyme_and_Meter dict;
     mutable VowelHexGraph vowel_hex_graph{};
-    mutable ConsonantDistance ConsonantDistance{};
+    mutable ConsonantDistance Consonant_Distance{};
     // bool import_success{};
 
     // Fixture() {
@@ -21,14 +21,14 @@ struct Fixture {
 
 
 TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
-    
+
     SECTION("word_to_phones wrapper"){
         std::string word("karaoke");
         auto phones_vec = dict.word_to_phones(word);
         REQUIRE(phones_vec[0] == "K EH2 R IY0 OW1 K IY0");
 
     }
-   
+
     SECTION("fuzzy_meter_to_binary_set") {
         std::string meter{"x/x/x/x/(x/)"};
         std::set<std::vector<int>> meters_set = dict.fuzzy_meter_to_binary_set(meter);
@@ -203,7 +203,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // TODO check vowel stresses
         //   AO1 R    IH0 N JH
         // D AO1 R HH IH1 N JH
-        // 
+        //
         std::string orange = "orange";
         std::string door_hinge = "door hinge";
         // TODO this fails because compare_end_line_rhyming_parts takes the shorter of the two options, i.e. one syllable hinge
@@ -239,4 +239,3 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(pulley_bully == 0);
     }
 }
-

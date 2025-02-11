@@ -2,6 +2,7 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <stdexcept>
 
 VowelHexGraph::VowelHexGraph() {
     initialize();
@@ -17,7 +18,7 @@ std::vector<std::string> VowelHexGraph::get_connected_vowels(const std::string& 
 }
 
 int VowelHexGraph::calculate_shortest_distance(const std::string& vowel1, const std::string& vowel2){
-  
+
    // If both vowels are the same, the distance is 0
     if (vowel1 == vowel2) return 0;
 
@@ -82,21 +83,21 @@ void VowelHexGraph::initialize(){
 
       /**
        * OPIONATED /ER/ ADJACENCY:
-       * 
+       *
        * 2. ER as in BIRD is adjacent to:
        *    AH as in BUT
        */
       add_edge("ER", "AH");
 
 
-      /** 
-       * 
+      /**
+       *
        * DIPTHONG ADJACENCIES
        * "AW", "AY", "EY", "OW", "OY" // 5 dipthongs
        *  bout, bite, bait, boat, boy
-       * 
+       *
        * I am making some extremely opinionated decisions here:
-       * 
+       *
        * 1. AW as in BOUT is adjacent to:
        *    UH as in BUSH
        *    OW as in BOAT
@@ -108,9 +109,9 @@ void VowelHexGraph::initialize(){
       add_edge("AW", "OW");
       add_edge("AW", "AH");
       /**
-       * 
+       *
        * 2. AY as in BITE is adjacent to:
-       *    IH as in BIT 
+       *    IH as in BIT
        *    EY as in BAIT
        *    AH as in BUT
        *    AA : 2 (satisfied by AH adjacency) ((if you were to get rid of that you'd need to somehow set a distance, e.g. by introducing a notion of distance into edges))
@@ -147,10 +148,10 @@ void VowelHexGraph::initialize(){
       add_edge("OY", "IH");
 
       calculate_all_distances();
-      
+
       initialized = true;
    }
-   
+
 }
 
 int VowelHexGraph::get_distance(const std::string& vowel1, const std::string& vowel2) {
@@ -159,7 +160,3 @@ int VowelHexGraph::get_distance(const std::string& vowel1, const std::string& vo
    }
    return distance_between_vowels_map[std::make_pair(vowel1, vowel2)];
 }
-
-
-
-

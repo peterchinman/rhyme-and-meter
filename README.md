@@ -49,6 +49,7 @@ This will generate `rhyme-and-meter.js`, `rhyme-and-meter.wasm`, and `rhmye-and-
 
 To use these functions in Javascript you can do something like this:
 
+```
     // Initialize the WebAssembly module
     Module().then((Module) => {
     	console.log("module initialized")
@@ -65,6 +66,15 @@ To use these functions in Javascript you can do something like this:
         // Or, for functions not in a class:
         const distance = Module.levenshtein_distance(string1, string2);
     })
+```
+
+Thanks to @nwoods, this project now also has python bindings. From the project root directory run:
+
+```
+pip install .
+```
+
+You'll then be able to run all of the class methods from inside the tidy confines of Python.
 
 ## Usage
 

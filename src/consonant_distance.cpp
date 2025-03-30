@@ -1,5 +1,6 @@
 #include "consonant_distance.hpp"
 #include <cstdlib>
+#include <stdexcept>
 
 ConsonantDistance::ConsonantDistance(){
    if (consonants.empty()) {
@@ -50,10 +51,10 @@ const Consonant& ConsonantDistance::get_consonant(const std::string& arpabet){
 }
 
 int ConsonantDistance::get_distance(const std::string& phone1, const std::string& phone2){
-   
+
    auto consonant1{get_consonant(phone1)};
    auto consonant2{get_consonant(phone2)};
-   
+
    if (consonant1.arpabet == consonant2.arpabet) {
       return 0;
    }
@@ -77,14 +78,14 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
          return std::abs(consonant1.place - consonant2.place);
       }
    }
-      
+
    // are two consonants in the same manner?
    else if(consonant1.manner == consonant2.manner){
       int distance = std::abs(consonant1.place - consonant2.place);
       distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
       return distance;
    }
-      
+
    // is one an affricate and the other either fricative or plosive?
    else if(
       (consonant1.manner == Manner::affricate && consonant2.manner == Manner::fricative)
@@ -108,7 +109,7 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
          distance += HARDCODED::AFFRICATE_PLOSIVE_PENALTY;
          return distance;
       }
-      
+
       // if affricate & non-sibilant fricative
       else if((consonant1.manner == Manner::affricate && consonant2.manner == Manner::fricative)
       || (consonant2.manner == Manner::affricate && consonant1.manner == Manner::fricative)){

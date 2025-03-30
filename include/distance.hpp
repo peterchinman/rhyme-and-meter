@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 // FOR INSERTIONS AND DELETIONS
 inline int GAP_PENALTY() {
@@ -48,7 +49,7 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
          VowelHexGraph::initialize();
          int vowel_distance{VowelHexGraph::get_distance(v1, v2)};
          if (stress1 != stress2) {
-            return vowel_distance + STRESS_PENALTY; 
+            return vowel_distance + STRESS_PENALTY;
          }
          return vowel_distance;
 
@@ -58,12 +59,12 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
    else {
       // Mismatch vowel to consonant, which we never want to happen??
       if (std::isdigit(s1.back()) || std::isdigit(s2.back())) {
-         return VOWEL_TO_CONSONANT_MISMATCH; 
+         return VOWEL_TO_CONSONANT_MISMATCH;
       }
-   
+
       // both consonants
       else {
-         ConsonantDistance::initialize;
+         ConsonantDistance::initialize();
          return ConsonantDistance::get_distance(s1, s2) * consonant_multipler;
       }
    }
@@ -72,15 +73,15 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
 
 /**
  * Implementation of Levenshtein distance algorithm, but comparing ARPABET symbols, instead of characters, using custom weights for gaps and substitutions based on phoneme distance.
- * 
+ *
  * TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches, because "most" and "moats" are more similar than the double sub penalty would seem?
- * 
+ *
  * TODO: Should take into account whether an insertion is a repetition of the same symbol and weight that less. For e.g. comparing "pulley" and "full lee", "lee" should be penalized less (or not at all) for repeating the /L/ symbol.
- * 
+ *
  * @param phones1 (string): string of space-separated phones
  * @param phones2 (stinrg): string of space-separated phones
  * @return (int): levenshtein distance between the sets of phones
- */ 
+ */
 inline int levenshtein_distance(const std::string& phones1, const std::string& phones2) {
     // Early return for trivial cases
     if (phones1.empty()) return phones2.size();
@@ -109,8 +110,8 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
             // std::cout << "Comparing: " << symbols1[i-1];
             // std::cout << " and " << symbols2[j-1] << std::endl;
             int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1])};
-            
-            curr[j] = std::min({ 
+
+            curr[j] = std::min({
                 prev[j] + GAP_PENALTY(),      // Deletion
                 curr[j - 1] + GAP_PENALTY(),  // Insertion
                 prev[j - 1] + mismatch_score // Substitution
@@ -154,8 +155,8 @@ inline int levenshtein_distance_with_multiplier(const std::string& phones1, cons
             // std::cout << "Comparing: " << symbols1[i-1];
             // std::cout << " and " << symbols2[j-1] << std::endl;
             int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1], consonant_multiplier)};
-            
-            curr[j] = std::min({ 
+
+            curr[j] = std::min({
                 prev[j] + GAP_PENALTY(),      // Deletion
                 curr[j - 1] + GAP_PENALTY(),  // Insertion
                 prev[j - 1] + mismatch_score // Substitution

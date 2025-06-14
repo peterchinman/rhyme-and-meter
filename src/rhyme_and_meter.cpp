@@ -15,12 +15,25 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <expected>
 
 std::vector<std::string> Rhyme_and_Meter::word_to_phones(const std::string& word){
     return dict.word_to_phones(word);
 }
 
-std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std::string& meter){
+std::string getErrorMessage(MeterError error) {
+    switch(error) {
+        case MeterError::NestedOptional:
+            return "Invalid meter: nested optional sections are not allowed";
+        case MeterError::UnclosedOptional:
+            return "Invalid meter: unclosed optional section";
+        case MeterError::UnrecognizedCharacter:
+            return "Invalid meter: unrecognized character";
+    }
+    return "Unknown meter error";
+}
+
+std::expected<std::set<std::vector<int>>, MeterError> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std::string& meter){
     // the pair here is so we can record whether this specific optional path is currently ACTIVE
     // initialize it with an empty vec and false, so that it's loaded up and ready to go;
     std::vector<std::pair<std::vector<int>, bool>> possible_paths{std::make_pair(std::vector<int>{}, false)};
@@ -61,7 +74,7 @@ std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std:
         }
         else if (c == '(') {
             if (in_optional) {
-                throw std::runtime_error("Invalid meter: " + meter);
+                return std::unexpected(MeterError::NestedOptional);
             }
             in_optional = true;
             // copy all the current optional paths, setting their bool flag to true
@@ -76,7 +89,7 @@ std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std:
         }
         else if(c == ')') {
             if(in_optional != true) {
-                throw std::runtime_error("Invalid meter: " + meter);
+                return std::unexpected(MeterError::UnclosedOptional);
             }
             in_optional = false;
 
@@ -88,13 +101,13 @@ std::set<std::vector<int>> Rhyme_and_Meter::fuzzy_meter_to_binary_set(const std:
         }
         else {
             // unrecognized character input
-            // TODO thru an exception
+            return std::unexpected(MeterError::UnrecognizedCharacter);
         }
     }
 
     // record results, using a set so that we don't get duplicates
     if (in_optional) {
-        throw std::runtime_error("Invalid meter: " + meter);
+        return std::unexpected(MeterError::UnclosedOptional);
     }
 
     std::set<std::vector<int>> meters_set;
@@ -111,7 +124,12 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
 
     std::vector<std::vector<int>> reference_meters{};
     {
-        const auto meters_set{fuzzy_meter_to_binary_set(meter_to_check)};
+        const auto meters_set_result{fuzzy_meter_to_binary_set(meter_to_check)};
+        if (!meters_set_result) {
+            result.is_valid = false;
+            return result;
+        }
+        const auto& meters_set = meters_set_result.value();
 
         for (const auto & meter : meters_set ) {
             reference_meters.emplace_back(meter);
@@ -472,6 +490,12 @@ EMSCRIPTEN_BINDINGS(my_module) {
 
     emscripten::register_vector<std::string>("StringVector");
 
+    emscripten::enum_<MeterError>("MeterError")
+        .value("NestedOptional", MeterError::NestedOptional)
+        .value("UnclosedOptional", MeterError::UnclosedOptional)
+        .value("UnrecognizedCharacter", MeterError::UnrecognizedCharacter);
+
+    emscripten::function("getErrorMessage", &getErrorMessage);
 
     emscripten::class_<Rhyme_and_Meter>("Rhyme_and_Meter")
         .constructor<>()

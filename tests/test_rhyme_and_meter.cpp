@@ -30,20 +30,20 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     }
 
     SECTION("fuzzy_meter_to_binary_set") {
-        std::string meter{"x/x/x/x/(x/)"};
-        std::set<std::vector<int>> meters_set = dict.fuzzy_meter_to_binary_set(meter);
-        REQUIRE(meters_set.size() == 2);
-        std::vector<int> check1 = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
-        REQUIRE(meters_set.find(check1) != meters_set.end());
-        std::vector<int> check2 = {0, 1, 0, 1, 0, 1, 0, 1};
-        REQUIRE(meters_set.find(check2) != meters_set.end());
+        std::string meter = "x/x";
+        auto meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(meters_set_result.has_value());
+        const auto& meters_set = meters_set_result.value();
+        REQUIRE(meters_set.size() == 1);
+        REQUIRE(meters_set.find(std::vector<int>{0,1,0}) != meters_set.end());
     }
 
     SECTION("fuzzy_meter_to_binary_set extra fuzzy edition") {
         std::string meter{"(x/)x/(x/)"};
-        std::set<std::vector<int>> meters_set = dict.fuzzy_meter_to_binary_set(meter);
-
-        // 3 possibilities here because 2 of the possibilites are the same and set doesn't store duplicates
+        auto meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(meters_set_result.has_value());
+        const auto& meters_set = meters_set_result.value();
+        // 3 possibilities here because 2 of the possibilites are  the same and set doesn't store duplicates
         REQUIRE(meters_set.size() == 3);
         std::vector<int> check1 = {0, 1};
         REQUIRE(meters_set.find(check1) != meters_set.end());
@@ -54,23 +54,34 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
 
         // extra convoluted example
         std::string meter2 = "(/x)/x (/)x/(x)";
-        std::set<std::vector<int>> meters_set2 = dict.fuzzy_meter_to_binary_set(meter2);
+        auto meters_set_result2 = dict.fuzzy_meter_to_binary_set(meter2);
+        REQUIRE(meters_set_result2.has_value());
+        const auto& meters_set2 = meters_set_result2.value();
         std::vector<int> check4 = {1, 0, 1, 0, 1, 0, 1, 0};
         REQUIRE(meters_set2.size() == 8);
         REQUIRE(meters_set2.find(check4) != meters_set2.end());
     }
 
-    SECTION("fuzzy_meter_to_binary_set exception handling") {
-        // no closing parentheses
-        std::string meter{"x/ ( x/"};
-        std::set<std::vector<int>> meters_set{};
-        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
-        // no opening paren
-        meter = "x/) /x/x";
-        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
-        // paren inside paren
-        meter = "x/ ((xx)) /x";
-        REQUIRE_THROWS( meters_set = dict.fuzzy_meter_to_binary_set(meter));
+    SECTION("fuzzy_meter_to_binary_set error handling") {
+        std::string meter = "x/x/(x/";
+        auto meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(!meters_set_result.has_value());
+        REQUIRE(meters_set_result.error() == MeterError::UnclosedOptional);
+
+        meter = "x/x/)x/";
+        meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(!meters_set_result.has_value());
+        REQUIRE(meters_set_result.error() == MeterError::UnclosedOptional);
+
+        meter = "x/x/(x/(x/))";
+        meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(!meters_set_result.has_value());
+        REQUIRE(meters_set_result.error() == MeterError::NestedOptional);
+
+        meter = "xjx";
+        meters_set_result = dict.fuzzy_meter_to_binary_set(meter);
+        REQUIRE(!meters_set_result.has_value());
+        REQUIRE(meters_set_result.error() == MeterError::UnrecognizedCharacter);
     }
 
     SECTION("check_meter_validity") {

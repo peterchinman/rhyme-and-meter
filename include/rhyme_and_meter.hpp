@@ -1,12 +1,20 @@
 #pragma once
 
 #include "phonetic.hpp"
+#include <expected>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+enum class MeterError {
+    NestedOptional,
+    UnclosedOptional,
+    UnrecognizedCharacter
+};
+
+std::string getErrorMessage(MeterError error);
 
 class Rhyme_and_Meter {
 private:
@@ -24,12 +32,12 @@ public:
      * 
      * Also removes any whitespace.
      * 
-     * Throws a std::runtime_error exeception if meter is invalid. 
+     * Returns a MeterError if meter is invalid, using std::expected.
      * 
      * @param meter (string): meter string containing 'x', '/' and possible white-space
-     * @return Set of Vector of Ints.
+     * @return Expected containing either a Set of Vector of Ints or a MeterError
     */
-    std::set<std::vector<int>> fuzzy_meter_to_binary_set(const std::string& meter);
+    std::expected<std::set<std::vector<int>>, MeterError> fuzzy_meter_to_binary_set(const std::string& meter);
 
     /**
      * Struct to return validity of meter, along with list of unrecognized words.

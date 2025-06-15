@@ -25,7 +25,7 @@ private:
 
 public:
 
-    std::vector<std::string> word_to_phones(const std::string& word);
+    std::expected<std::vector<std::string>, Phonetic::Error> word_to_phones(const std::string& word);
     
      /**
      * Convert meter in form of "x/x /x/(x /)" to a set of vector<int>, where 'x' is 0 and '/' is 1, where the set contains all the possible meters that could conform to the options.
@@ -75,6 +75,11 @@ public:
     */
     Check_Validity_Result check_syllable_validity(const std::string& text, int syllable_count);
 
+    // Error type for rhyming functions
+    struct RhymeError {
+        std::string message;
+    };
+
     /**
      * Takes two lines and returns comparable rhyming parts. Currently uses the shortest rhyming part.
      * 
@@ -93,9 +98,9 @@ public:
      * 
      * @param line1 (string): string of english words
      * @param line2 (string): string of english words
-     * @return (string): pair of strings 
+     * @return std::expected containing either a pair of vectors of rhyming parts, or a RhymeError if the operation fails
     */
-    std::pair< std::vector< std::string >, std::vector< std::string > > compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2);
+    std::expected<std::pair<std::vector<std::string>, std::vector<std::string>>, RhymeError> compare_end_line_rhyming_parts(const std::string& line1, const std::string& line2);
     
     /**
      * Given the possible pronunciations of the rhmying parts of the end of two lines, returns the minimum rhmying distance between them.
@@ -105,10 +110,9 @@ public:
      * TODO: Accept user definined key/value pairs of unknown words + known words that they rhyme with, for graceful error correction. 
      * 
      * @param rhyming_part_pairs (pairs of vec of strings)
-     * @return (int): minimum weighted edit distance
+     * @return std::expected containing either the minimum weighted edit distance, or a RhymeError if the operation fails
     */
-    int minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > >& rhyming_part_pairs);
-
+    std::expected<int, RhymeError> minimum_end_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& rhyming_part_pairs);
 
     /**
      * Compares the end rhyme distance of two words/lines.
@@ -119,9 +123,9 @@ public:
      *
      * @param line1 (string): string of english words
      * @param line2 (string): string of english words
-     * @return (int): rhyme distance. 
+     * @return std::expected containing either the rhyme distance, or a RhymeError if the operation fails
     */
-    int get_end_rhyme_distance(const std::string& line1, const std::string&line2);
+    std::expected<int, RhymeError> get_end_rhyme_distance(const std::string& line1, const std::string& line2);
 };
 
 

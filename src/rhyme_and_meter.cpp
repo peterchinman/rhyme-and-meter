@@ -17,7 +17,7 @@
 #include <vector>
 #include <expected>
 
-std::vector<std::string> Rhyme_and_Meter::word_to_phones(const std::string& word){
+std::expected<std::vector<std::string>, Phonetic::Error> Rhyme_and_Meter::word_to_phones(const std::string& word){
     return dict.word_to_phones(word);
 }
 
@@ -147,8 +147,8 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
     for (const auto & word : phones) {
 
         // if there are unrecognized words, add them to our result Struct and skip
-        if (word.second == false) {
-            result.unrecognized_words.emplace_back(word.first.at(0));
+        if (!word.pronunciations) {
+            result.unrecognized_words.emplace_back(word.word);
             result.is_valid = false;
             continue;
         }
@@ -156,7 +156,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
         // we keep a record of stress patterns we've seen so that we don't cause unnecessary forks
         std::unordered_set<std::string> stress_patterns_observed{};
         // iterate over each pronunciation of this word
-        for( const auto & pronunciation : word.first) {
+        for( const auto & pronunciation : word.pronunciations.value()) {
             std::string stress_pattern = dict.phone_to_stress(pronunciation);
             const auto check_insert = stress_patterns_observed.insert(stress_pattern);
             // if insert failed it's because we've seen this stress pattern before and we can skip this pronunciation;
@@ -294,8 +294,8 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
     for (const auto & word : phones) {
 
         // if there are unrecognized words, add them to our result Struct and skip
-        if (word.second == false) {
-            result.unrecognized_words.emplace_back(word.first.at(0));
+        if (!word.pronunciations) {
+            result.unrecognized_words.emplace_back(word.word);
             result.is_valid = false;
             continue;
         }
@@ -303,7 +303,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
         // record any syllable counts we have already seen for this word, so that we don't cause unnecessary forks
         std::vector<int> syllable_counts_observed {};
 
-        for (const auto & pronunciation : word.first) {
+        for (const auto & pronunciation : word.pronunciations.value()) {
 
             int pronunciation_syllable_count = dict.phone_to_syllable_count(pronunciation);
 
@@ -352,8 +352,9 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
     return result;
 }
 
-std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Meter::compare_end_line_rhyming_parts (const std::string& line1, const std::string& line2) {
-    std::pair< std::vector< std::string >, std::vector< std::string > > result{};
+std::expected<std::pair<std::vector<std::string>, std::vector<std::string>>, Rhyme_and_Meter::RhymeError> 
+Rhyme_and_Meter::compare_end_line_rhyming_parts(const std::string& line1, const std::string& line2) {
+    std::pair<std::vector<std::string>, std::vector<std::string>> result{};
 
     // get the last word of each line
     std::istringstream iss1{line1};
@@ -367,20 +368,39 @@ std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Me
     while(iss2 >> last_word2){
         continue;
     }
+
     // get pronunciations of each word
-    // TODO handle exceptions
-    std::vector< std::string > pronunciations1 {dict.word_to_phones(last_word1)};
-    std::vector< std::string > pronunciations2 {dict.word_to_phones(last_word2)};
+    auto phones1 = dict.word_to_phones(last_word1);
+    if (!phones1) {
+        return std::unexpected(RhymeError{phones1.error().message});
+    }
+    std::vector<std::string> pronunciations1 = phones1.value();
+
+    auto phones2 = dict.word_to_phones(last_word2);
+    if (!phones2) {
+        return std::unexpected(RhymeError{phones2.error().message});
+    }
+    std::vector<std::string> pronunciations2 = phones2.value();
 
     // get rhyming part of each pronunciation
-    std::vector< std::string > rhyming_parts1{};
-    std::vector< std::string > rhyming_parts2{};
+    std::vector<std::string> rhyming_parts1{};
+    std::vector<std::string> rhyming_parts2{};
 
     for (const auto& p : pronunciations1) {
         rhyming_parts1.emplace_back(dict.get_rhyming_part(p));
     }
     for (const auto& p : pronunciations2) {
         rhyming_parts2.emplace_back(dict.get_rhyming_part(p));
+    }
+
+    if (rhyming_parts1.empty() || rhyming_parts2.empty()) {
+        if (rhyming_parts1.empty() && rhyming_parts2.empty()) {
+            return std::unexpected(RhymeError{"Could not find rhyming parts for either word: '" + last_word1 + "' and '" + last_word2 + "'"});
+        } else if (rhyming_parts1.empty()) {
+            return std::unexpected(RhymeError{"Could not find rhyming parts for first word: '" + last_word1 + "'"});
+        } else {
+            return std::unexpected(RhymeError{"Could not find rhyming parts for second word: '" + last_word2 + "'"});
+        }
     }
 
     // get syllable length of shortest rhyming part
@@ -395,12 +415,8 @@ std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Me
             shortest_length = dict.phone_to_syllable_count(r);
         }
     }
+
     // cut off front of each rhyming part until they are the length of shortest rhyming part
-    // i.e. count backward from end to nth vowel
-
-    // std::vector<std::string> clipped_parts1{};
-    // std::vector<std::string> clipped_parts2{};
-
     for(auto& r : rhyming_parts1) {
         if (dict.phone_to_syllable_count(r) > shortest_length) {
             // get a reverse iterator pointing at the number in the last stressed vowel
@@ -451,20 +467,23 @@ std::pair< std::vector< std::string >, std::vector< std::string > > Rhyme_and_Me
 
     result = std::make_pair(rhyming_parts1, rhyming_parts2);
     return result;
-
-
-
 }
 
-int Rhyme_and_Meter::minimum_end_rhyme_distance( const std::pair< std::vector< std::string >, std::vector< std::string > > & rhyming_part_pairs) {
+std::expected<int, Rhyme_and_Meter::RhymeError> 
+Rhyme_and_Meter::minimum_end_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& rhyming_part_pairs) {
+    if (rhyming_part_pairs.first.empty() || rhyming_part_pairs.second.empty()) {
+        return std::unexpected(RhymeError{"Empty rhyming parts provided"});
+    }
+
     int minimum_distance{};
-    bool first_flag{};
+    bool first_flag{true};
 
     for(const auto& p1 : rhyming_part_pairs.first) {
         for(const auto & p2 : rhyming_part_pairs.second) {
             int distance = levenshtein_distance(p1, p2);
-            if(!first_flag) {
+            if(first_flag) {
                 minimum_distance = distance;
+                first_flag = false;
             }
             else {
                 if(distance < minimum_distance){
@@ -474,16 +493,17 @@ int Rhyme_and_Meter::minimum_end_rhyme_distance( const std::pair< std::vector< s
         }
     }
 
-
     return minimum_distance;
 }
 
-int Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std::string&line2) {
-    return minimum_end_rhyme_distance(compare_end_line_rhyming_parts(line1, line2));
+std::expected<int, Rhyme_and_Meter::RhymeError> 
+Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std::string& line2) {
+    auto rhyming_parts = compare_end_line_rhyming_parts(line1, line2);
+    if (!rhyming_parts) {
+        return std::unexpected(rhyming_parts.error());
+    }
+    return minimum_end_rhyme_distance(rhyming_parts.value());
 }
-
-
-
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_BINDINGS(my_module) {

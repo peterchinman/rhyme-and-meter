@@ -211,7 +211,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string line2 = "which summoned by bully";
         auto rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
         REQUIRE(!rhyming_parts.has_value());
-        REQUIRE(rhyming_parts.error().message.find("xyzzy") != std::string::npos);
+        REQUIRE(rhyming_parts.error().message.find("XYZZY") != std::string::npos);
 
         // Test with empty lines
         line1 = "";
@@ -305,7 +305,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string line2 = "which summoned by bully";
         auto result = dict.get_end_rhyme_distance(line1, line2);
         REQUIRE(!result.has_value());
-        REQUIRE(result.error().message.find("xyzzy") != std::string::npos);
+        std::cout << "result error: " << result.error().message << std::endl;
+        REQUIRE(result.error().message.find("XYZZY") != std::string::npos);
 
         // Test with empty lines
         line1 = "";

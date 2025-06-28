@@ -1,5 +1,6 @@
 #include "consonant_distance.hpp"
 #include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 
 ConsonantDistance::ConsonantDistance(){
@@ -117,6 +118,11 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
          distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
          distance += HARDCODED::AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY;
          return distance;
+      }
+
+      else {
+         std::cout << "This path should never happen..." << std::endl;
+         return HARDCODED::UNRELATED_CONSONANT_PENALTY;
       }
    }
    // otherwise, consonants are unrelated

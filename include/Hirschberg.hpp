@@ -38,9 +38,6 @@ struct Alignment_And_Distance {
    int distance{};
 };
 
-
-
-
 //Useful tools
 inline int min3(int a, int b, int c);
 

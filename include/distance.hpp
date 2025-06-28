@@ -18,8 +18,10 @@ inline int GAP_PENALTY() {
    return 10;
 }
 
+const int VOWEL_COEFFICIENT{2};
+
 // TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches.
-inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, float consonant_multipler = 1) {
+inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
    const int MATCH_SCORE = 0;
    const int STRESS_PENALTY = 1;
    const int VOWEL_TO_CONSONANT_MISMATCH = 30;
@@ -42,16 +44,16 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
       if(v1 == v2 && stress1 != stress2) {
          // std::cout << "Same vowel but different stress." << std::endl;
 
-         return STRESS_PENALTY;
+         return STRESS_PENALTY * VOWEL_COEFFICIENT;
       }
       else {
          // Check vowel distance.
          VowelHexGraph::initialize();
          int vowel_distance{VowelHexGraph::get_distance(v1, v2)};
          if (stress1 != stress2) {
-            return vowel_distance + STRESS_PENALTY;
+            return (vowel_distance + STRESS_PENALTY) * VOWEL_COEFFICIENT;
          }
-         return vowel_distance;
+         return vowel_distance * VOWEL_COEFFICIENT;
 
       }
    }
@@ -65,7 +67,7 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
       // both consonants
       else {
          ConsonantDistance::initialize();
-         return ConsonantDistance::get_distance(s1, s2) * consonant_multipler;
+         return ConsonantDistance::get_distance(s1, s2);
       }
    }
 }
@@ -84,8 +86,8 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2, floa
  */
 inline int levenshtein_distance(const std::string& phones1, const std::string& phones2) {
     // Early return for trivial cases
-    if (phones1.empty()) return phones2.size();
-    if (phones2.empty()) return phones1.size();
+    if (phones1.empty()) return phones2.size() * GAP_PENALTY();
+    if (phones2.empty()) return phones1.size() * GAP_PENALTY();
 
     std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
     std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
@@ -125,54 +127,8 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
     return prev[len2];
 }
 
-// DUPLICATING THIS EXCLUSIVELY FOR FINETUNING THE CONSONANT MULTIPLIER
-// TODO DELETE THIS AFTER YOU FIND IT
-inline int levenshtein_distance_with_multiplier(const std::string& phones1, const std::string& phones2, float consonant_multiplier) {
-    // Early return for trivial cases
-    if (phones1.empty()) return phones2.size();
-    if (phones2.empty()) return phones1.size();
-
-    std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
-    std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
-
-    size_t len1 = symbols1.size();
-    size_t len2 = symbols2.size();
-
-    // Create two rows for dynamic programming
-    std::vector<int> prev(len2 + 1, 0);
-    std::vector<int> curr(len2 + 1, 0);
-
-    // Initialize base cases with GAP_PENALTY()
-    for (size_t j = 0; j <= len2; ++j) {
-        prev[j] = j * GAP_PENALTY();
-    }
-
-    // Fill the DP table row by row
-    for (size_t i = 1; i <= len1; ++i) {
-        // Base case, other axis
-        curr[0] = i * GAP_PENALTY();
-        for (size_t j = 1; j <= len2; ++j) {
-            // std::cout << "Comparing: " << symbols1[i-1];
-            // std::cout << " and " << symbols2[j-1] << std::endl;
-            int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1], consonant_multiplier)};
-
-            curr[j] = std::min({
-                prev[j] + GAP_PENALTY(),      // Deletion
-                curr[j - 1] + GAP_PENALTY(),  // Insertion
-                prev[j - 1] + mismatch_score // Substitution
-            });
-
-            // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;
-        }
-        prev.swap(curr);
-    }
-
-    return prev[len2];
-}
-
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_BINDINGS(distance_functions) {
    emscripten::function("levenshtein_distance", &levenshtein_distance);
-   emscripten::function("levenshtein_distance_with_muliplier", &levenshtein_distance_with_multiplier);
 }
 #endif

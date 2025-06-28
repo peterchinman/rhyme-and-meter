@@ -352,9 +352,10 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
     return result;
 }
 
-std::expected<std::pair<std::vector<std::string>, std::vector<std::string>>, Rhyme_and_Meter::RhymeError> 
+std::expected<std::pair<std::vector<std::string>, std::vector<std::string>>, Rhyme_and_Meter::UnidentifiedWords> 
 Rhyme_and_Meter::compare_end_line_rhyming_parts(const std::string& line1, const std::string& line2) {
     std::pair<std::vector<std::string>, std::vector<std::string>> result{};
+    std::vector<std::string> unindentified_words{};
 
     // get the last word of each line
     std::istringstream iss1{line1};
@@ -371,15 +372,14 @@ Rhyme_and_Meter::compare_end_line_rhyming_parts(const std::string& line1, const 
 
     // get pronunciations of each word
     auto phones1 = dict.word_to_phones(last_word1);
-    if (!phones1) {
-        return std::unexpected(RhymeError{phones1.error().message});
-    }
-    std::vector<std::string> pronunciations1 = phones1.value();
-
     auto phones2 = dict.word_to_phones(last_word2);
-    if (!phones2) {
-        return std::unexpected(RhymeError{phones2.error().message});
+    if (!phones1 || !phones2) {
+        unindentified_words.emplace_back(phones1.error().unidentified_word);
+        unindentified_words.emplace_back(phones2.error().unidentified_word);
+        return std::unexpected(UnidentifiedWords{unindentified_words});
     }
+
+    std::vector<std::string> pronunciations1 = phones1.value();
     std::vector<std::string> pronunciations2 = phones2.value();
 
     // get rhyming part of each pronunciation
@@ -391,16 +391,6 @@ Rhyme_and_Meter::compare_end_line_rhyming_parts(const std::string& line1, const 
     }
     for (const auto& p : pronunciations2) {
         rhyming_parts2.emplace_back(dict.get_rhyming_part(p));
-    }
-
-    if (rhyming_parts1.empty() || rhyming_parts2.empty()) {
-        if (rhyming_parts1.empty() && rhyming_parts2.empty()) {
-            return std::unexpected(RhymeError{"Could not find rhyming parts for either word: '" + last_word1 + "' and '" + last_word2 + "'"});
-        } else if (rhyming_parts1.empty()) {
-            return std::unexpected(RhymeError{"Could not find rhyming parts for first word: '" + last_word1 + "'"});
-        } else {
-            return std::unexpected(RhymeError{"Could not find rhyming parts for second word: '" + last_word2 + "'"});
-        }
     }
 
     // get syllable length of shortest rhyming part
@@ -469,12 +459,7 @@ Rhyme_and_Meter::compare_end_line_rhyming_parts(const std::string& line1, const 
     return result;
 }
 
-std::expected<int, Rhyme_and_Meter::RhymeError> 
-Rhyme_and_Meter::minimum_end_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& rhyming_part_pairs) {
-    if (rhyming_part_pairs.first.empty() || rhyming_part_pairs.second.empty()) {
-        return std::unexpected(RhymeError{"Empty rhyming parts provided"});
-    }
-
+int Rhyme_and_Meter::minimum_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& rhyming_part_pairs) {
     int minimum_distance{};
     bool first_flag{true};
 
@@ -496,13 +481,13 @@ Rhyme_and_Meter::minimum_end_rhyme_distance(const std::pair<std::vector<std::str
     return minimum_distance;
 }
 
-std::expected<int, Rhyme_and_Meter::RhymeError> 
+std::expected<int, Rhyme_and_Meter::UnidentifiedWords> 
 Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std::string& line2) {
     auto rhyming_parts = compare_end_line_rhyming_parts(line1, line2);
     if (!rhyming_parts) {
         return std::unexpected(rhyming_parts.error());
     }
-    return minimum_end_rhyme_distance(rhyming_parts.value());
+    return minimum_rhyme_distance(rhyming_parts.value());
 }
 
 #ifdef __EMSCRIPTEN__

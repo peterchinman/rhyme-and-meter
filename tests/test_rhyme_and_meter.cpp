@@ -94,7 +94,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(dict.check_meter_validity(text, meter).is_valid  == true);
         REQUIRE(dict.check_meter_validity(text, short_meter).is_valid  == false);
         REQUIRE(dict.check_meter_validity(text, long_meter).is_valid  == false);
-        // multi syllable test
+    // multi syllable test
         // KARAOKE  K EH2 R IY0 OW1 K IY0
         // OKEY-DOKEY  OW1 K IY0 D OW1 K IY0
                     text = "karaoke okey-dokey";
@@ -161,7 +161,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string phones2 = "S IH1 T IH0 NG";
         REQUIRE(levenshtein_distance(phones1, phones2) ==
                 ConsonantDistance::get_distance("K", "S")
-                + VowelHexGraph::get_distance("AH", "IH")
+                + VowelHexGraph::get_distance("AH", "IH") * VOWEL_COEFFICIENT
                 + ConsonantDistance::get_distance("N", "NG"));
     }
 
@@ -208,28 +208,22 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     SECTION("compare_end_line_rhyming_parts error cases") {
         // Test with non-existent words
         std::string line1 = "I pulled the xyzzy";
-        std::string line2 = "which summoned by bully";
+        std::string line2 = "which summoned the rrrzzz";
         auto rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
         REQUIRE(!rhyming_parts.has_value());
-        REQUIRE(rhyming_parts.error().message.find("XYZZY") != std::string::npos);
-
-        // Test with empty lines
-        line1 = "";
-        line2 = "bully";
-        rhyming_parts = dict.compare_end_line_rhyming_parts(line1, line2);
-        REQUIRE(!rhyming_parts.has_value());
+        REQUIRE(rhyming_parts.error().words.at(0) == "XYZZY");
+        REQUIRE(rhyming_parts.error().words.at(1) == "RRRZZZ");
     }
 
-    SECTION("minimum_end_rhyme_distance") {
+    SECTION("minimum_rhyme_distance") {
         // perfect rhmye
         // UH1 L IY0
         std::string pulley = "I pulled the pulley";
         std::string bully = "which summoned by bully";
         auto rhyming_parts = dict.compare_end_line_rhyming_parts(pulley, bully);
         REQUIRE(rhyming_parts.has_value());
-        auto pulley_bully = dict.minimum_end_rhyme_distance(rhyming_parts.value());
-        REQUIRE(pulley_bully.has_value());
-        REQUIRE(pulley_bully.value() == 0);
+        auto pulley_bully = dict.minimum_rhyme_distance(rhyming_parts.value());
+        REQUIRE(pulley_bully == 0);
 
         // Vowel Stress + Insertion
         // IY1 D
@@ -238,9 +232,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string penelope = "Penelope";
         rhyming_parts = dict.compare_end_line_rhyming_parts(bleed, penelope);
         REQUIRE(rhyming_parts.has_value());
-        auto bleed_penelope = dict.minimum_end_rhyme_distance(rhyming_parts.value());
-        REQUIRE(bleed_penelope.has_value());
-        REQUIRE(bleed_penelope.value() == GAP_PENALTY() + SUBSTITUTION_SCORE("IY1", "IY0"));
+        auto bleed_penelope = dict.minimum_rhyme_distance(rhyming_parts.value());
+        REQUIRE(bleed_penelope == GAP_PENALTY() + SUBSTITUTION_SCORE("IY1", "IY0"));
 
         // Vowel Distance + 1 Insertions
         // TODO check vowel stresses
@@ -252,9 +245,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // preferred behavior is probably to take the  length of the first term
         rhyming_parts = dict.compare_end_line_rhyming_parts(orange, door_hinge);
         REQUIRE(rhyming_parts.has_value());
-        auto orange_doorhinge = dict.minimum_end_rhyme_distance(rhyming_parts.value());
-        REQUIRE(orange_doorhinge.has_value());
-        // REQUIRE(orange_doorhinge.value() == GAP_PENALTY() * 1 + SUBSTITUTION_SCORE("AH0", "IH1"));
+        auto orange_doorhinge = dict.minimum_rhyme_distance(rhyming_parts.value());
+        // REQUIRE(orange_doorhinge == GAP_PENALTY() * 1 + SUBSTITUTION_SCORE("AH0", "IH1"));
 
         // Vowel Distance + 2 Insertions
         // UH1 L     IY0
@@ -263,9 +255,8 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string paltry = "that's so paltry";
         rhyming_parts = dict.compare_end_line_rhyming_parts(pulley, paltry);
         REQUIRE(rhyming_parts.has_value());
-        auto pulley_paltry = dict.minimum_end_rhyme_distance(rhyming_parts.value());
-        REQUIRE(pulley_paltry.has_value());
-        REQUIRE(pulley_paltry.value() == GAP_PENALTY() * 2 + SUBSTITUTION_SCORE("UH1", "AO1"));
+        auto pulley_paltry = dict.minimum_rhyme_distance(rhyming_parts.value());
+        REQUIRE(pulley_paltry == GAP_PENALTY() * 2 + SUBSTITUTION_SCORE("UH1", "AO1"));
 
         // Perfect rhyme, but from among many pronunciations
         // USES  Y UW1 S AH0 Z
@@ -276,19 +267,10 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         // ABUSES(1)  AH0 B Y UW1 Z IH0 Z
         std::string uses = "so many uses";
         std::string abuses = "himself he abuses";
-        rhyming_parts = dict.compare_end_line_rhyming_parts(uses, abuses);
+    rhyming_parts = dict.compare_end_line_rhyming_parts(uses, abuses);
         REQUIRE(rhyming_parts.has_value());
-        auto uses_abuses = dict.minimum_end_rhyme_distance(rhyming_parts.value());
-        REQUIRE(uses_abuses.has_value());
-        REQUIRE(uses_abuses.value() == 0);
-    }
-
-    SECTION("minimum_end_rhyme_distance error cases") {
-        // Test with empty rhyming parts
-        std::pair<std::vector<std::string>, std::vector<std::string>> empty_parts;
-        auto result = dict.minimum_end_rhyme_distance(empty_parts);
-        REQUIRE(!result.has_value());
-        REQUIRE(result.error().message.find("Empty rhyming parts") != std::string::npos);
+        auto uses_abuses = dict.minimum_rhyme_distance(rhyming_parts.value());
+        REQUIRE(uses_abuses == 0);
     }
 
     SECTION("get_end_rhyme_distance") {
@@ -305,8 +287,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string line2 = "which summoned by bully";
         auto result = dict.get_end_rhyme_distance(line1, line2);
         REQUIRE(!result.has_value());
-        std::cout << "result error: " << result.error().message << std::endl;
-        REQUIRE(result.error().message.find("XYZZY") != std::string::npos);
+        REQUIRE(result.error().words.at(0) == "XYZZY");
 
         // Test with empty lines
         line1 = "";

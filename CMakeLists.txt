@@ -57,5 +57,7 @@ else()
   # Test directory
   add_subdirectory(tests)
 
+  add_subdirectory(external/phonetic/tests)
+
   # END NORMAL TESTING BUILD
 endif()

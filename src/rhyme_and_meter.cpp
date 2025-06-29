@@ -144,11 +144,11 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
     // std::vector<std::vector<int>> reference_meters declared above
     std::vector<std::vector<int>> matched_meters{};
     // iterate over each word in our text
-    for (const auto & word : phones) {
+    for (const auto & word : phones.words_with_pronunciations) {
 
         // if there are unrecognized words, add them to our result Struct and skip
-        if (!word.pronunciations) {
-            result.unrecognized_words.emplace_back(word.word);
+        if (word.second.empty()) {
+            result.unrecognized_words.emplace_back(word.first);
             result.is_valid = false;
             continue;
         }
@@ -156,7 +156,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
         // we keep a record of stress patterns we've seen so that we don't cause unnecessary forks
         std::unordered_set<std::string> stress_patterns_observed{};
         // iterate over each pronunciation of this word
-        for( const auto & pronunciation : word.pronunciations.value()) {
+        for( const auto & pronunciation : word.second) {
             std::string stress_pattern = dict.phone_to_stress(pronunciation);
             const auto check_insert = stress_patterns_observed.insert(stress_pattern);
             // if insert failed it's because we've seen this stress pattern before and we can skip this pronunciation;
@@ -291,11 +291,11 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
     std::vector<int> matched_syllable_paths{};
 
     // iterate over each word in our text
-    for (const auto & word : phones) {
+    for (const auto & word : phones.words_with_pronunciations) {
 
         // if there are unrecognized words, add them to our result Struct and skip
-        if (!word.pronunciations) {
-            result.unrecognized_words.emplace_back(word.word);
+        if (word.second.empty()) {
+            result.unrecognized_words.emplace_back(word.first);
             result.is_valid = false;
             continue;
         }
@@ -303,7 +303,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_syllable_validity(
         // record any syllable counts we have already seen for this word, so that we don't cause unnecessary forks
         std::vector<int> syllable_counts_observed {};
 
-        for (const auto & pronunciation : word.pronunciations.value()) {
+        for (const auto & pronunciation : word.second) {
 
             int pronunciation_syllable_count = dict.phone_to_syllable_count(pronunciation);
 

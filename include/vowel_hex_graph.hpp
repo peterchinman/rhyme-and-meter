@@ -18,7 +18,7 @@ class VowelHexGraph {
 private:
 
     /**
-     * The Vowel Hexagonal Graph is a rendering of vowel space that I invented, by arranging the CMU Pronouncing Dictionary monophthong vowels into a hexagonal grid. Image the vowels dripping with honey.
+     * The Vowel Hexagonal Graph is a rendering of vowel space that I invented, by arranging the CMU Pronouncing Dictionary monophthong vowels into a hexagonal grid. Imagine the vowels dripping with honey.
      *                                                     
                                                       
      ..         .          .         ..           

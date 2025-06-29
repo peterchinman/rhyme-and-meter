@@ -1,6 +1,7 @@
 #pragma once
 
 #include "phonetic.hpp"
+#include "Hirschberg.hpp"
 #include <expected>
 #include <set>
 #include <string>
@@ -103,11 +104,16 @@ public:
      *
      * TODO: Accept user definined key/value pairs of unknown words + known words that they rhyme with, for graceful error correction. 
      * 
-     * @param rhyming_part_pairs (pairs of vec of strings)
+     * @param pair_of_possible_pronunciations (pairs of vec of strings)
      * @return the minimum weighted edit distance
     */
-    int minimum_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& rhyming_part_pairs);
+    int minimum_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
 
+    /**
+     * Uses Hirschberg algorithm to get both an alignment that results in a minimum pronunciation distance between two strings of english text.
+     */
+    Alignment_And_Distance minimum_alignmment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
+    
     /**
      * Compares the end rhyme distance of two words/lines.
      * 0     => perfect rhyme!

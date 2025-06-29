@@ -154,7 +154,6 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(dict.check_syllable_validity(bad_text, syllable_count_good2).is_valid == false);
     }
 
-    // Note: these exact values will change any time you change the weights of insertions/deletions, substituions, etc. SO it maybe makes more sense just to do comparisons. E.g. Distance between "kitten" and "sitting" and less than distance between "kitten" and "written".
     SECTION("levenshtein_distance") {
         // two consonant swaps
         std::string phones1 = "K IH1 T AH0 N";
@@ -271,6 +270,27 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(rhyming_parts.has_value());
         auto uses_abuses = dict.minimum_rhyme_distance(rhyming_parts.value());
         REQUIRE(uses_abuses == 0);
+    }
+
+    SECTION("hirschberg") {
+        std::string word1 = "kitten";
+        std::string word2 = "sitting";
+        auto maybe_pronunciations1{dict.word_to_phones(word1)};
+        REQUIRE(maybe_pronunciations1.has_value());
+        auto pronunciations1 = maybe_pronunciations1.value();
+
+        auto maybe_pronunciations2{dict.word_to_phones(word2)};
+        REQUIRE(maybe_pronunciations2.has_value());
+        auto pronunciations2 = maybe_pronunciations2.value();
+
+        auto alignment_and_distance(dict.minimum_alignmment(std::make_pair(pronunciations1, pronunciations2)));
+
+        REQUIRE(alignment_and_distance.distance == 
+            ConsonantDistance::get_distance("K", "S")
+            + VowelHexGraph::get_distance("AH", "IH") * VOWEL_COEFFICIENT
+            + ConsonantDistance::get_distance("N", "NG")
+        );
+        // REQUIRE(alignment_and_distance.ZWpair.first.);
     }
 
     SECTION("get_end_rhyme_distance") {

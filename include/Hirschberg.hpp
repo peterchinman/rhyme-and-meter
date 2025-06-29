@@ -25,7 +25,6 @@
 
 #pragma once
 
-#include "vowel_hex_graph.hpp"
 #include "distance.hpp"
 
 #include <iostream>

@@ -97,15 +97,6 @@ Returns a `Check_Validity_Result` object, containing a bool `is_valid` and a vec
 
 Compares the end rhymes of two lines and returns the "rhyme distance". Currently, this takes as its comparison unit the at the shortest rhyming-part from between the last word of the two lines.
 
-Scoring, roughly:
-
-    0     => perfect rhyme!
-    1-5   => pretty dang close!
-    6-10  => close!
-    11-20 => further!
-    20+   => noisy!
-
-(Note / TODO: these number guides probably need to be updated now.)
 
 ### `levenshtein_distance()`
 

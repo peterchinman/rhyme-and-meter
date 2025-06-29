@@ -1,5 +1,5 @@
 # Add the test executable
-add_executable(tests test_rhyme_and_meter.cpp test_vowel_hex_graph.cpp test_consonant_distance.cpp ${CMAKE_SOURCE_DIR}/src/rhyme_and_meter.cpp ${CMAKE_SOURCE_DIR}/src/vowel_hex_graph.cpp ${CMAKE_SOURCE_DIR}/src/consonant_distance.cpp)
+add_executable(tests test_rhyme_and_meter.cpp test_vowel_hex_graph.cpp test_consonant_distance.cpp test_convenience.cpp ${CMAKE_SOURCE_DIR}/src/rhyme_and_meter.cpp ${CMAKE_SOURCE_DIR}/src/vowel_hex_graph.cpp ${CMAKE_SOURCE_DIR}/src/consonant_distance.cpp)
 
 target_link_libraries(tests phonetic
                         Catch2::Catch2WithMain )

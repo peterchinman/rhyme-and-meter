@@ -315,4 +315,92 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         result = dict.get_end_rhyme_distance(line1, line2);
         REQUIRE(!result.has_value());
     }
+
+    SECTION("minimum_text_alignment") {
+        // Test with words that have multiple pronunciations
+        std::string text1 = "read";
+        std::string text2 = "read";
+        
+        auto alignment_result = dict.minimum_text_alignment(text1, text2);
+        REQUIRE(alignment_result.has_value());
+        
+        auto alignment = alignment_result.value();
+        // Should find perfect alignment with distance 0
+        REQUIRE(alignment.distance == 0);
+        
+        // Test with different words that should have some distance
+        std::string text3 = "read";
+        std::string text4 = "book";
+        alignment_result = dict.minimum_text_alignment(text3, text4);
+        REQUIRE(alignment_result.has_value());
+        
+        alignment = alignment_result.value();
+        // Should have some distance > 0
+        REQUIRE(alignment.distance > 0);
+    }
+
+    SECTION("minimum_text_alignment with multiple words") {
+        // Test with multiple words
+        std::string text1 = "read book";
+        std::string text2 = "read book";
+        
+        auto alignment_result = dict.minimum_text_alignment(text1, text2);
+        REQUIRE(alignment_result.has_value());
+        
+        auto alignment = alignment_result.value();
+        // Should find perfect alignment with distance 0
+        REQUIRE(alignment.distance == 0);
+        
+        // Test with different multi-word texts
+        std::string text3 = "read book";
+        std::string text4 = "write story";
+        alignment_result = dict.minimum_text_alignment(text3, text4);
+        REQUIRE(alignment_result.has_value());
+        
+        alignment = alignment_result.value();
+        // Should have some distance > 0
+        REQUIRE(alignment.distance > 0);
+    }
+
+    SECTION("minimum_text_alignment error handling") {
+        // Test with text containing unrecognized words
+        std::string text1 = "read xyzzy";
+        std::string text2 = "book";
+        
+        auto alignment_result = dict.minimum_text_alignment(text1, text2);
+        REQUIRE(!alignment_result.has_value());
+        REQUIRE(alignment_result.error().words.size() == 1);
+        REQUIRE(alignment_result.error().words[0] == "XYZZY");
+        
+        // Test with both texts having unrecognized words
+        std::string text3 = "read xyzzy";
+        std::string text4 = "book rrrzzz";
+        alignment_result = dict.minimum_text_alignment(text3, text4);
+        REQUIRE(!alignment_result.has_value());
+        REQUIRE(alignment_result.error().words.size() == 2);
+        REQUIRE(std::find(alignment_result.error().words.begin(), alignment_result.error().words.end(), "XYZZY") != alignment_result.error().words.end());
+        REQUIRE(std::find(alignment_result.error().words.begin(), alignment_result.error().words.end(), "RRRZZZ") != alignment_result.error().words.end());
+    }
+
+    SECTION("compare_text_pronunciations template function") {
+        // Test with minimum distance function
+        std::string text1 = "read";
+        std::string text2 = "read";
+        
+        auto distance_result = dict.minimum_text_distance(text1, text2);
+        REQUIRE(distance_result.has_value());
+        REQUIRE(distance_result.value() == 0);  // Same words should have distance 0
+        
+        // Test with different words
+        std::string text3 = "read";
+        std::string text4 = "book";
+        distance_result = dict.minimum_text_distance(text3, text4);
+        REQUIRE(distance_result.has_value());
+        REQUIRE(distance_result.value() > 0);  // Different words should have distance > 0
+        
+        // Test with generic alignment function
+        auto alignment_result = dict.minimum_text_alignment_generic(text1, text2);
+        REQUIRE(alignment_result.has_value());
+        REQUIRE(alignment_result.value().distance == 0);  // Same words should have distance 0
+    }
 }

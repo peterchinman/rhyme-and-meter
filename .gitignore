@@ -2,8 +2,10 @@
 .vscode/
 
 build/
+build_wasm/
 data/
 
 
 /silent-letter-notes.md
 emscripten-build/
+

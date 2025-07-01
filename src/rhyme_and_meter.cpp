@@ -8,6 +8,7 @@
 #include "distance.hpp"
 
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -19,6 +20,10 @@
 
 std::expected<std::vector<std::string>, Phonetic::Error> Rhyme_and_Meter::word_to_phones(const std::string& word){
     return dict.word_to_phones(word);
+}
+
+Phonetic::TextToPhonesResult Rhyme_and_Meter::text_to_phones(const std::string& text) {
+    return dict.text_to_phones(text);
 }
 
 std::string getErrorMessage(MeterError error) {
@@ -506,6 +511,56 @@ Alignment_And_Distance Rhyme_and_Meter::minimum_alignmment(const std::pair<std::
     return minimum_alignment;
 }
 
+std::expected<std::vector<std::vector<std::string>>, Rhyme_and_Meter::UnidentifiedWords> 
+Rhyme_and_Meter::get_text_pronunciation_combinations(const std::string& text) {
+    auto text_result = dict.text_to_phones(text);
+    
+    // Check if there were any failed words
+    if (text_result.has_failures()) {
+        return std::unexpected(UnidentifiedWords{text_result.failed_words});
+    }
+    
+    // Generate all possible pronunciation combinations
+    std::vector<std::vector<std::string>> combinations;
+    
+    // Helper function to generate combinations recursively
+    std::function<void(size_t, std::vector<std::string>, const Phonetic::TextToPhonesResult&, std::vector<std::vector<std::string>>&)> generate_combinations = 
+        [&](size_t word_index, std::vector<std::string> current_combination, const Phonetic::TextToPhonesResult& text_result, std::vector<std::vector<std::string>>& all_combinations) {
+            if (word_index >= text_result.words_with_pronunciations.size()) {
+                all_combinations.emplace_back(current_combination);
+                return;
+            }
+            
+            const auto& pronunciations = text_result.words_with_pronunciations[word_index].second;
+            for (const auto& pronunciation : pronunciations) {
+                auto new_combination = current_combination;
+                new_combination.emplace_back(pronunciation);
+                generate_combinations(word_index + 1, new_combination, text_result, all_combinations);
+            }
+        };
+    
+    generate_combinations(0, {}, text_result, combinations);
+    return combinations;
+}
+
+std::expected<int, Rhyme_and_Meter::UnidentifiedWords> 
+Rhyme_and_Meter::minimum_text_distance(const std::string& text1, const std::string& text2) {
+    return compare_text_pronunciations<int>(text1, text2, 
+        [](const std::vector<std::string>& phones1, const std::vector<std::string>& phones2) {
+            return levenshtein_distance(phones_vector_to_string(phones1), phones_vector_to_string(phones2));
+        },
+        [](const int& a, const int& b) { return a < b; });
+}
+
+std::expected<Alignment_And_Distance, Rhyme_and_Meter::UnidentifiedWords> 
+Rhyme_and_Meter::minimum_text_alignment(const std::string& text1, const std::string& text2) {
+    return compare_text_pronunciations<Alignment_And_Distance>(text1, text2, 
+        [](const std::vector<std::string>& phones1, const std::vector<std::string>& phones2) {
+            return Hirschberg(phones1, phones2);
+        },
+        [](const Alignment_And_Distance& a, const Alignment_And_Distance& b) { return a.distance < b.distance; });
+}
+
 std::expected<int, Rhyme_and_Meter::UnidentifiedWords> 
 Rhyme_and_Meter::get_end_rhyme_distance(const std::string& line1, const std::string& line2) {
     auto rhyming_parts = compare_end_line_rhyming_parts(line1, line2);
@@ -530,14 +585,21 @@ EMSCRIPTEN_BINDINGS(my_module) {
     emscripten::class_<Rhyme_and_Meter>("Rhyme_and_Meter")
         .constructor<>()
         .function("word_to_phones", &Rhyme_and_Meter::word_to_phones)
+        .function("text_to_phones", &Rhyme_and_Meter::text_to_phones)
         .function("check_syllable_validity", &Rhyme_and_Meter::check_syllable_validity)
         .function("check_meter_validity", &Rhyme_and_Meter::check_meter_validity)
+        .function("minimum_text_alignment", &Rhyme_and_Meter::minimum_text_alignment)
+        .function("minimum_text_distance", &Rhyme_and_Meter::minimum_text_distance)
         .function("get_end_rhmye_distance", &Rhyme_and_Meter::get_end_rhyme_distance)
         ;
 
     emscripten::value_object<Rhyme_and_Meter::Check_Validity_Result>("Check_Validity_Result")
         .field("is_valid", &Rhyme_and_Meter::Check_Validity_Result::is_valid)
         .field("unrecognized_words", &Rhyme_and_Meter::Check_Validity_Result::unrecognized_words)
+        ;
+
+    emscripten::value_object<Rhyme_and_Meter::UnidentifiedWords>("UnidentifiedWords")
+        .field("words", &Rhyme_and_Meter::UnidentifiedWords::words)
         ;
 
 

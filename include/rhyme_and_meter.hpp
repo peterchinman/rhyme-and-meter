@@ -2,7 +2,10 @@
 
 #include "phonetic.hpp"
 #include "Hirschberg.hpp"
+#include "convenience.hpp"
+#include "distance.hpp"
 #include <expected>
+#include <functional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -27,6 +30,14 @@ private:
 public:
 
     std::expected<std::vector<std::string>, Phonetic::Error> word_to_phones(const std::string& word);
+    
+    /**
+     * Convert text to phones using the phonetic dictionary.
+     * 
+     * @param text (string): string of english words to convert
+     * @return TextToPhonesResult containing words and their pronunciations
+    */
+    Phonetic::TextToPhonesResult text_to_phones(const std::string& text);
     
      /**
      * Convert meter in form of "x/x /x/(x /)" to a set of vector<int>, where 'x' is 0 and '/' is 1, where the set contains all the possible meters that could conform to the options.
@@ -115,11 +126,130 @@ public:
     Alignment_And_Distance minimum_alignmment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
     
     /**
-     * Compares the end rhyme distance of two words/lines.
-     * 0     => perfect rhyme!
-     * 1-5   => pretty dang close!
-     * 6-10  => close
-     * 11-20 => further
+     * Takes two strings of text and finds the minimum alignment between all possible pronunciation combinations.
+     * 
+     * @param text1 (string): first text string to compare
+     * @param text2 (string): second text string to compare
+     * @return std::expected containing either the minimum alignment, or an error if any words failed to be identified
+    */
+    std::expected<Alignment_And_Distance, UnidentifiedWords> minimum_text_alignment(const std::string& text1, const std::string& text2);
+    
+    /**
+     * Helper function that takes a text string and returns all possible pronunciation combinations.
+     * 
+     * @param text (string): text string to process
+     * @return std::expected containing either all pronunciation combinations, or an error if any words failed to be identified
+    */
+    std::expected<std::vector<std::vector<std::string>>, UnidentifiedWords> get_text_pronunciation_combinations(const std::string& text);
+    
+    /**
+     * Generic function that takes two strings of text and applies a comparison function to all possible pronunciation combinations.
+     * 
+     * This method runs text_to_phones() on each text string, then generates all possible combinations
+     * of word pronunciations from both texts and applies the provided comparison function to each combination.
+     * 
+     * @param text1 (string): first text string to compare
+     * @param text2 (string): second text string to compare
+     * @param comparison_func (function): function that takes two vectors of strings (phonemes) and returns a result
+     * @param min_func (function): function that compares two results and returns true if first is less than second
+     * @return std::expected containing either the minimum result from the comparison function, or an error if any words failed to be identified
+    */
+    template<typename ResultType>
+    std::expected<ResultType, UnidentifiedWords> compare_text_pronunciations(
+        const std::string& text1, 
+        const std::string& text2,
+        std::function<ResultType(const std::vector<std::string>&, const std::vector<std::string>&)> comparison_func,
+        std::function<bool(const ResultType&, const ResultType&)> min_func
+    ) {
+        // Get pronunciation combinations for both texts
+        auto combinations1_result = get_text_pronunciation_combinations(text1);
+        auto combinations2_result = get_text_pronunciation_combinations(text2);
+        
+        // Check if either text has unidentified words and collect all of them
+        std::vector<std::string> all_failed_words;
+        if (!combinations1_result.has_value()) {
+            all_failed_words.insert(all_failed_words.end(), 
+                combinations1_result.error().words.begin(), 
+                combinations1_result.error().words.end());
+        }
+        if (!combinations2_result.has_value()) {
+            all_failed_words.insert(all_failed_words.end(), 
+                combinations2_result.error().words.begin(), 
+                combinations2_result.error().words.end());
+        }
+        
+        // If there are any failed words, return them all together
+        if (!all_failed_words.empty()) {
+            return std::unexpected(UnidentifiedWords{all_failed_words});
+        }
+        
+        const auto& combinations1 = combinations1_result.value();
+        const auto& combinations2 = combinations2_result.value();
+        
+        // Apply comparison function to all combinations and find minimum
+        ResultType minimum_result{};
+        bool first_flag = true;
+        
+        for (const auto& combination1 : combinations1) {
+            // Convert combination1 to a single pronunciation string
+            std::string combined_pronunciation1;
+            for (size_t i = 0; i < combination1.size(); ++i) {
+                if (i > 0) {
+                    combined_pronunciation1 += " ";
+                }
+                combined_pronunciation1 += combination1[i];
+            }
+            
+            auto phones_vector1 = phones_string_to_vector(combined_pronunciation1);
+            
+            for (const auto& combination2 : combinations2) {
+                // Convert combination2 to a single pronunciation string
+                std::string combined_pronunciation2;
+                for (size_t i = 0; i < combination2.size(); ++i) {
+                    if (i > 0) {
+                        combined_pronunciation2 += " ";
+                    }
+                    combined_pronunciation2 += combination2[i];
+                }
+                
+                auto phones_vector2 = phones_string_to_vector(combined_pronunciation2);
+                
+                // Apply the comparison function
+                ResultType result = comparison_func(phones_vector1, phones_vector2);
+                
+                if (first_flag) {
+                    minimum_result = result;
+                    first_flag = false;
+                } else {
+                    if (min_func(result, minimum_result)) {
+                        minimum_result = result;
+                    }
+                }
+            }
+        }
+        
+        return minimum_result;
+    }
+    
+    /**
+     * Convenience function to get minimum alignment distance between two texts.
+     * 
+     * @param text1 (string): first text string to compare
+     * @param text2 (string): second text string to compare
+     * @return std::expected containing either the minimum alignment distance, or an error if any words failed to be identified
+    */
+    std::expected<int, UnidentifiedWords> minimum_text_distance(const std::string& text1, const std::string& text2);
+    
+    /**
+     * Convenience function to get minimum alignment between two texts.
+     * 
+     * @param text1 (string): first text string to compare
+     * @param text2 (string): second text string to compare
+     * @return std::expected containing either the minimum alignment, or an error if any words failed to be identified
+    */
+    std::expected<Alignment_And_Distance, UnidentifiedWords> minimum_text_alignment_generic(const std::string& text1, const std::string& text2);
+    
+    /**
      *
      * @param line1 (string): string of english words
      * @param line2 (string): string of english words

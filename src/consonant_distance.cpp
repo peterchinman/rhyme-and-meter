@@ -1,4 +1,5 @@
 #include "consonant_distance.hpp"
+#include "distance.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -65,7 +66,7 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
    // if W & V (these are similar right or am I crazy?)
    else if (  (consonant1.arpabet == "W" || consonant1.arpabet == "V")
    &&         (consonant2.arpabet == "W" || consonant2.arpabet == "V")){
-      return HARDCODED::W_V_DISTANCE;
+      return CONSTANTS::CONSONANT::W_V_DISTANCE;
    }
    // if both are 'R' || 'Y' || 'W' || 'L'
    else if(   (consonant1.manner == Manner::approximant || consonant1.manner == Manner::lateral_approximant)
@@ -73,7 +74,7 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
       // if R & L
       if (  (consonant1.arpabet == "R" || consonant1.arpabet == "L")
       &&    (consonant2.arpabet == "R" || consonant2.arpabet == "L")){
-         return HARDCODED::R_L_DISTANCE;
+         return CONSTANTS::CONSONANT::R_L_DISTANCE;
       }
       else {
          return std::abs(consonant1.place - consonant2.place);
@@ -83,7 +84,7 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
    // are two consonants in the same manner?
    else if(consonant1.manner == consonant2.manner){
       int distance = std::abs(consonant1.place - consonant2.place);
-      distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
+      distance += consonant1.voiced == consonant2.voiced ? 0 : CONSTANTS::CONSONANT::VOICED_PENALTY;
       return distance;
    }
 
@@ -98,16 +99,16 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
       if((consonant1.manner == Manner::affricate && consonant2.manner == Manner::fricative && consonant2.sibilant == true)
       || (consonant2.manner == Manner::affricate && consonant1.manner == Manner::fricative && consonant1.sibilant == true)){
          int distance = std::abs(consonant1.place - consonant2.place);
-         distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
-         distance += HARDCODED::AFFRICATE_SIBILANT_FRICATIVE_PENALTY;
+         distance += consonant1.voiced == consonant2.voiced ? 0 : CONSTANTS::CONSONANT::VOICED_PENALTY;
+         distance += CONSTANTS::CONSONANT::AFFRICATE_SIBILANT_FRICATIVE_PENALTY;
          return distance;
       }
       // if affricate & plosive
       else if((consonant1.manner == Manner::affricate && consonant2.manner == Manner::plosive)
       || (consonant2.manner == Manner::affricate && consonant1.manner == Manner::plosive)){
          int distance = std::abs(consonant1.place - consonant2.place);
-         distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
-         distance += HARDCODED::AFFRICATE_PLOSIVE_PENALTY;
+         distance += consonant1.voiced == consonant2.voiced ? 0 : CONSTANTS::CONSONANT::VOICED_PENALTY;
+         distance += CONSTANTS::CONSONANT::AFFRICATE_PLOSIVE_PENALTY;
          return distance;
       }
 
@@ -115,18 +116,18 @@ int ConsonantDistance::get_distance(const std::string& phone1, const std::string
       else if((consonant1.manner == Manner::affricate && consonant2.manner == Manner::fricative)
       || (consonant2.manner == Manner::affricate && consonant1.manner == Manner::fricative)){
          int distance = std::abs(consonant1.place - consonant2.place);
-         distance += consonant1.voiced == consonant2.voiced ? 0 : HARDCODED::VOICED_PENALTY;
-         distance += HARDCODED::AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY;
+         distance += consonant1.voiced == consonant2.voiced ? 0 : CONSTANTS::CONSONANT::VOICED_PENALTY;
+         distance += CONSTANTS::CONSONANT::AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY;
          return distance;
       }
 
       else {
          std::cout << "This path should never happen..." << std::endl;
-         return HARDCODED::UNRELATED_CONSONANT_PENALTY;
+         return CONSTANTS::CONSONANT::UNRELATED_PENALTY;
       }
    }
    // otherwise, consonants are unrelated
    else {
-      return HARDCODED::UNRELATED_CONSONANT_PENALTY;
+      return CONSTANTS::CONSONANT::UNRELATED_PENALTY;
    }
 }

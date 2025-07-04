@@ -40,7 +40,7 @@ struct Alignment_And_Distance {
 //Useful tools
 inline int min3(int a, int b, int c);
 
-// Prints out the ZWpair that we get back from Hirschberg
+// Prints out the ZWpair that we get back from hirschberg
 inline void print_pair(std::pair< std::vector<std::string>, std::vector<std::string> > ZWpair ) {
     for (const auto & symbol : ZWpair.first) {
         std::cout << symbol;
@@ -75,10 +75,10 @@ inline std::size_t argmin_element(const std::vector<int> score);
 
 
 
-//Hirschberg: main algorithm; returns alignments-pair space-efficiently
+//hirschberg: main algorithm; returns alignments-pair space-efficiently
 // Feed it two vectors of strings of ARPABET phones.
 // TODO standardize this to use space-separated strings so that it aligns with CMUdict
-inline Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y);
+inline Alignment_And_Distance hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y);
 
 //Functions
 //Return minimum of three integers
@@ -253,7 +253,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> operator+(std::pai
 
 
 
-Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y)
+Alignment_And_Distance hirschberg(const std::vector<std::string>& X, const std::vector<std::string>& Y)
 {
     Alignment_And_Distance alignment_and_distance{};
 
@@ -368,7 +368,7 @@ Alignment_And_Distance Hirschberg(const std::vector<std::string>& X, const std::
         }
         
         
-        ZWpair = Hirschberg(X_to_xmid, Y_to_ymid).ZWpair + Hirschberg(X_from_xmid, Y_from_ymid).ZWpair;
+        ZWpair = hirschberg(X_to_xmid, Y_to_ymid).ZWpair + hirschberg(X_from_xmid, Y_from_ymid).ZWpair;
         alignment_and_distance.ZWpair = ZWpair;
     }
     return alignment_and_distance;
@@ -393,7 +393,7 @@ EMSCRIPTEN_BINDINGS(hirschberg) {
     ;
 
     // Bind the function
-    emscripten::function("Hirschberg", &Hirschberg);
+    emscripten::function("hirschberg", &hirschberg);
 
     
 }

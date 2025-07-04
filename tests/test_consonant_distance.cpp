@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "consonant_distance.hpp"
+#include "distance.hpp"
 
 #include <optional>
 
@@ -29,7 +30,7 @@ TEST_CASE_PERSISTENT_FIXTURE(ConsonantFixture, "consonant_distance tests") {
       std::string phone1 = "B";
       std::string phone2 = "K";
       // delta_place of 6 + voiced_penalty
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == 6 + HARDCODED::VOICED_PENALTY);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == 6 + CONSTANTS::CONSONANT::VOICED_PENALTY);
 
       // BOTH FRICATIVE
 
@@ -42,7 +43,7 @@ TEST_CASE_PERSISTENT_FIXTURE(ConsonantFixture, "consonant_distance tests") {
       phone1 = "CH";
       phone2 = "JH";
       // delta_place 0 + voiced_penalty
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::VOICED_PENALTY);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::VOICED_PENALTY);
 
       // BOTH NASAL
 
@@ -54,12 +55,12 @@ TEST_CASE_PERSISTENT_FIXTURE(ConsonantFixture, "consonant_distance tests") {
       // R & L 
       phone1 = "R";
       phone2 = "L";
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::R_L_DISTANCE);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::R_L_DISTANCE);
 
       // W & V
       phone1 = "W";
       phone2 = "V";
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::W_V_DISTANCE);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::W_V_DISTANCE);
 
       // APPROXIMANTS
       phone1 = "W";
@@ -69,24 +70,24 @@ TEST_CASE_PERSISTENT_FIXTURE(ConsonantFixture, "consonant_distance tests") {
       // ONE AFFRICATE ONE SIBILANT FRICATIVE
       phone1 = "CH";
       phone2 = "SH";
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::AFFRICATE_SIBILANT_FRICATIVE_PENALTY);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::AFFRICATE_SIBILANT_FRICATIVE_PENALTY);
 
       // ONE AFFRICATE ONE NON SIBILANT FRICATIVE
       phone1 = "CH";
       phone2 = "TH";
       // delta_place 2
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY + 2);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY + 2);
 
       // ONE AFFRICATE ONE PLOSIVE
       phone1 = "CH";
       phone2 = "T";
       // delta_place 1
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::AFFRICATE_PLOSIVE_PENALTY + 1);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::AFFRICATE_PLOSIVE_PENALTY + 1);
 
       // UNRELATED CONSONANTS
       phone1 = "M";
       phone2 = "F";
-      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == HARDCODED::UNRELATED_CONSONANT_PENALTY);
+      REQUIRE(ConsonantDistance::get_distance(phone1, phone2) == CONSTANTS::CONSONANT::UNRELATED_PENALTY);
 
    }
 

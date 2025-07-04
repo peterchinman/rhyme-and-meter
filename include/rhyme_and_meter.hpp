@@ -1,9 +1,9 @@
 #pragma once
 
 #include "phonetic.hpp"
-#include "Hirschberg.hpp"
+#include "hirschberg.hpp"
 #include "convenience.hpp"
-#include "distance.hpp"
+#include "levenshtein_distance.hpp"
 #include <expected>
 #include <functional>
 #include <set>
@@ -121,7 +121,7 @@ public:
     int minimum_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
 
     /**
-     * Uses Hirschberg algorithm to get both an alignment that results in a minimum pronunciation distance between two strings of english text.
+     * Uses hirschberg algorithm to get both an alignment that results in a minimum pronunciation distance between two strings of english text.
      */
     Alignment_And_Distance minimum_alignmment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
     

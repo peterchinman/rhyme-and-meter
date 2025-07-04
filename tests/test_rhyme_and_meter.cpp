@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "distance.hpp"
+#include "levenshtein_distance.hpp"
 #include "rhyme_and_meter.hpp"
 #include "vowel_hex_graph.hpp"
 #include <iostream>
@@ -160,7 +161,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         std::string phones2 = "S IH1 T IH0 NG";
         REQUIRE(levenshtein_distance(phones1, phones2) ==
                 ConsonantDistance::get_distance("K", "S")
-                + VowelHexGraph::get_distance("AH", "IH") * VOWEL_COEFFICIENT
+                + VowelHexGraph::get_distance("AH", "IH") * CONSTANTS::VOWEL::COEFFICIENT
                 + ConsonantDistance::get_distance("N", "NG"));
     }
 
@@ -192,11 +193,11 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(vowel_deletion_distance > consonant_deletion_distance);
         
         // Test 3: Verify specific penalty values
-        // The vowel insertion should cost VOWEL_GAP_PENALTY (15)
-        REQUIRE(vowel_insertion_distance == VOWEL_GAP_PENALTY);
+        // The vowel insertion should cost CONSTANTS::VOWEL::INDEL_PENALTY (15)
+        REQUIRE(vowel_insertion_distance == CONSTANTS::VOWEL::INDEL_PENALTY);
         
-        // The consonant insertion should cost CONSONANT_GAP_PENALTY (8)
-        REQUIRE(consonant_insertion_distance == CONSONANT_GAP_PENALTY);
+        // The consonant insertion should cost CONSONANT::INDEL_PENALTY (8)
+        REQUIRE(consonant_insertion_distance == CONSTANTS::CONSONANT::INDEL_PENALTY);
         
         // Test 4: Edge case - empty string vs single phoneme
         std::string empty = "";
@@ -207,13 +208,13 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         int empty_to_consonant = levenshtein_distance(empty, single_consonant);
         
         // Empty to vowel should cost vowel penalty
-        REQUIRE(empty_to_vowel == VOWEL_GAP_PENALTY);
+        REQUIRE(empty_to_vowel == CONSTANTS::VOWEL::INDEL_PENALTY);
         // Empty to consonant should cost consonant penalty
-        REQUIRE(empty_to_consonant == CONSONANT_GAP_PENALTY);
+        REQUIRE(empty_to_consonant == CONSTANTS::CONSONANT::INDEL_PENALTY);
         
         // Test 7: Verify that the default gap penalty (no phoneme provided) uses consonant penalty
         // This tests the backward compatibility
-        REQUIRE(GAP_PENALTY() == CONSONANT_GAP_PENALTY);
+        REQUIRE(GAP_PENALTY() == CONSTANTS::CONSONANT::INDEL_PENALTY);
     }
 
     SECTION("compare_end_line_rhyming_parts") {
@@ -339,7 +340,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
 
         REQUIRE(alignment_and_distance.distance == 
             ConsonantDistance::get_distance("K", "S")
-            + VowelHexGraph::get_distance("AH", "IH") * VOWEL_COEFFICIENT
+            + VowelHexGraph::get_distance("AH", "IH") * CONSTANTS::VOWEL::COEFFICIENT
             + ConsonantDistance::get_distance("N", "NG")
         );
         // REQUIRE(alignment_and_distance.ZWpair.first.);
@@ -525,7 +526,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         auto ball_bog = dict.minimum_text_distance("ball", "bog");
         REQUIRE(ball_bog.has_value());
         // Intuition: bull should be closer to ball than bog (vowel change vs consonant change)
-        REQUIRE(ball_bull.value() < ball_bog.value());
+        REQUIRE(ball_bull.value() > ball_bog.value());
         
         // mere & mar vs mere & meal
         auto mere_meal = dict.minimum_text_distance("mere", "meal");

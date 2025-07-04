@@ -3,9 +3,8 @@
 #endif
 
 #include "rhyme_and_meter.hpp"
-
-#include "Hirschberg.hpp"
-#include "distance.hpp"
+#include "hirschberg.hpp"
+#include "levenshtein_distance.hpp"
 
 #include <fstream>
 #include <functional>
@@ -495,7 +494,7 @@ Alignment_And_Distance Rhyme_and_Meter::minimum_alignmment(const std::pair<std::
 
     for(const auto& p1 : pair_of_possible_pronunciations.first) {
         for(const auto & p2 : pair_of_possible_pronunciations.second) {
-            Alignment_And_Distance pair_alignment = Hirschberg(phones_string_to_vector(p1), phones_string_to_vector(p2));
+            Alignment_And_Distance pair_alignment = hirschberg(phones_string_to_vector(p1), phones_string_to_vector(p2));
             if(first_flag) {
                 minimum_alignment = pair_alignment;
                 first_flag = false;
@@ -556,7 +555,7 @@ std::expected<Alignment_And_Distance, Rhyme_and_Meter::UnidentifiedWords>
 Rhyme_and_Meter::minimum_text_alignment(const std::string& text1, const std::string& text2) {
     return compare_text_pronunciations<Alignment_And_Distance>(text1, text2, 
         [](const std::vector<std::string>& phones1, const std::vector<std::string>& phones2) {
-            return Hirschberg(phones1, phones2);
+            return hirschberg(phones1, phones2);
         },
         [](const Alignment_And_Distance& a, const Alignment_And_Distance& b) { return a.distance < b.distance; });
 }

@@ -5,34 +5,6 @@
 #include <unordered_map>
 #include <optional>
 
-namespace HARDCODED{
-   // TIN, DIN
-   const int VOICED_PENALTY = 1;
-
-   // furthest related consonants are 7 apart
-   // unrelated consonants should be... somewhat further than that??
-   // TODO: fine-tune this value
-   const int UNRELATED_CONSONANT_PENALTY = 10;
-
-   // ROOT, LOOT
-   const int R_L_DISTANCE = 1;
-
-   // WHILE, VIAL
-   // (these are similar right or am I crazy?)
-   const int W_V_DISTANCE = 2;
-
-   // CHIN, SHIN
-   const int AFFRICATE_SIBILANT_FRICATIVE_PENALTY = 1;
-
-   // CHIN, TIN
-   const int AFFRICATE_PLOSIVE_PENALTY = 2;
-
-   // CHIN, THIN
-   const int AFFRICATE_NON_SIBILANT_FRICATIVE_PENALTY = 2;
-
- 
-}
-
 enum class Manner{
    affricate,
    approximant,

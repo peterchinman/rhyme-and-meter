@@ -162,7 +162,7 @@ Rhyme_and_Meter::Check_Validity_Result Rhyme_and_Meter::check_meter_validity(con
         std::unordered_set<std::string> stress_patterns_observed{};
         // iterate over each pronunciation of this word
         for( const auto & pronunciation : word.second) {
-            std::string stress_pattern = dict.phone_to_stress(pronunciation);
+            std::string stress_pattern = dict.phones_to_stresses(pronunciation);
             const auto check_insert = stress_patterns_observed.insert(stress_pattern);
             // if insert failed it's because we've seen this stress pattern before and we can skip this pronunciation;
             if (check_insert.second == false) {

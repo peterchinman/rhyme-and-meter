@@ -38,5 +38,10 @@ inline std::string phones_vector_to_string(std::vector<std::string> vector) {
     return result;
 }
 
+// Naive hack relying on CMU phoneme format to detect vowels using the accent indicator.
+inline bool is_vowel(const std::string& phoneme) {
+    return std::isdigit(phoneme.back());
+}   
+
 
 

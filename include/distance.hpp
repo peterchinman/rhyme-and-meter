@@ -13,10 +13,17 @@
 #include <vector>
 #include <algorithm>
 
+const int VOWEL_GAP_PENALTY = 20;
+const int CONSONANT_GAP_PENALTY = 10;  
+
 // FOR INSERTIONS AND DELETIONS
-// TODO: insertions/deletions of consonants should be cheaper than insertions/deletions of vowels. 
-inline int GAP_PENALTY() {
-   return 10;
+// Gap penalty varies based on whether we're inserting/deleting a vowel or consonant
+inline int GAP_PENALTY(const std::string& phoneme = "") {
+   if (phoneme.empty()) {
+      return CONSONANT_GAP_PENALTY; // Default to consonant penalty
+   }
+   
+   return is_vowel(phoneme) ? VOWEL_GAP_PENALTY : CONSONANT_GAP_PENALTY;
 }
 
 // TODO: fine-tune this value
@@ -87,12 +94,30 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
  * @return (int): levenshtein distance between the sets of phones
  */
 inline int levenshtein_distance(const std::string& phones1, const std::string& phones2) {
-    // Early return for trivial cases
-    if (phones1.empty()) return phones2.size() * GAP_PENALTY();
-    if (phones2.empty()) return phones1.size() * GAP_PENALTY();
 
     std::vector<std::string> symbols1{phones_string_to_vector(phones1)};
     std::vector<std::string> symbols2{phones_string_to_vector(phones2)};
+
+   // Handle empty cases
+    if (symbols1.empty() || symbols2.empty()) {
+      if (symbols1.empty() && symbols2.empty()) {
+        return 0;
+      }
+      else if (symbols1.empty()) {
+         int distance{0};
+         for (const auto& symbol : symbols2) {
+            distance += GAP_PENALTY(symbol);
+         }
+         return distance;
+      }
+      else {
+         int distance{0};
+         for (const auto& symbol : symbols1) {
+            distance += GAP_PENALTY(symbol);
+         }
+         return distance;
+      }
+    }
 
     size_t len1 = symbols1.size();
     size_t len2 = symbols2.size();
@@ -102,23 +127,24 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
     std::vector<int> curr(len2 + 1, 0);
 
     // Initialize base cases with GAP_PENALTY()
-    for (size_t j = 0; j <= len2; ++j) {
-        prev[j] = j * GAP_PENALTY();
+    prev[0] = 0;
+    for (size_t j = 1; j <= len2; ++j) {
+      prev[j] = j * GAP_PENALTY(symbols2.at(j-1));
     }
 
     // Fill the DP table row by row
     for (size_t i = 1; i <= len1; ++i) {
         // Base case, other axis
-        curr[0] = i * GAP_PENALTY();
+        curr[0] = i * GAP_PENALTY(symbols1.at(i-1));
         for (size_t j = 1; j <= len2; ++j) {
             // std::cout << "Comparing: " << symbols1[i-1];
             // std::cout << " and " << symbols2[j-1] << std::endl;
             int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1])};
 
             curr[j] = std::min({
-                prev[j] + GAP_PENALTY(),      // Deletion
-                curr[j - 1] + GAP_PENALTY(),  // Insertion
-                prev[j - 1] + mismatch_score // Substitution
+                prev[j] + GAP_PENALTY(symbols1.at(i-1)),      // Deletion of symbol from phones1
+                curr[j - 1] + GAP_PENALTY(symbols2.at(j-1)),  // Insertion of symbol from phones2
+               prev[j - 1] + mismatch_score // Substitution
             });
 
             // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;

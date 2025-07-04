@@ -9,10 +9,10 @@ namespace HARDCODED{
    // TIN, DIN
    const int VOICED_PENALTY = 1;
 
-   // REASONING for this value:
    // furthest related consonants are 7 apart
-   // unrelated consonants are… twice that far?
-   const int UNRELATED_CONSONANT_PENALTY = 14;
+   // unrelated consonants should be... somewhat further than that??
+   // TODO: fine-tune this value
+   const int UNRELATED_CONSONANT_PENALTY = 10;
 
    // ROOT, LOOT
    const int R_L_DISTANCE = 1;

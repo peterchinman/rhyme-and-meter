@@ -1,0 +1,5 @@
+- [ ] The gap penalty needs to be adjusted based on whether a vowel or a consonant is being inserted/deleted. Inserting/Deleting a consonsonant is less costly than inserting/deleting a vowel.
+  - First approximation: inserting a consonant should cost around what an unrelated consonant sub costs?
+  - Inserting a constant is an inflection.
+  - Inserting a vowel is an entire syllable. 
+- [ ] 

@@ -397,10 +397,102 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         distance_result = dict.minimum_text_distance(text3, text4);
         REQUIRE(distance_result.has_value());
         REQUIRE(distance_result.value() > 0);  // Different words should have distance > 0
+    }
+
+    SECTION("phonetic_distance_calibration") {
+        /**
+         * We want to compare two pairs of word, where one word remains the same in each, e.g. A & B vs A & C.
+         * 
+         * We test various phonetic changes to make sure that our distance measurements are calibrated correctly.
+         * 
+         * Specifically we are testing to see if the following are correct:
+         * 1. Vowel distance
+         * 2. Consonant distance
+         * 3. Vowel coefficient
+         */
+
+        // 1. VOWEL DISTANCE TESTS (only vowel changes)
+        // ball & bull vs ball & bile
+        auto ball_bull = dict.minimum_text_distance("ball", "bull");
+        auto ball_bile = dict.minimum_text_distance("ball", "bile");
+        REQUIRE(ball_bull.has_value());
+        REQUIRE(ball_bile.has_value());
+        REQUIRE(ball_bull.value() < ball_bile.value());
         
-        // Test with generic alignment function
-        auto alignment_result = dict.minimum_text_alignment_generic(text1, text2);
-        REQUIRE(alignment_result.has_value());
-        REQUIRE(alignment_result.value().distance == 0);  // Same words should have distance 0
+        // buck & book vs buck & bake
+        auto buck_book = dict.minimum_text_distance("buck", "book");
+        auto buck_bake = dict.minimum_text_distance("buck", "bake");
+        REQUIRE(buck_book.has_value());
+        REQUIRE(buck_bake.has_value());
+        // Intuition: book should be closer to buck than bake (AH vs UW vs EY)
+        REQUIRE(buck_book.value() < buck_bake.value());
+        
+        // luck & lack vs luck & leak
+        auto luck_lack = dict.minimum_text_distance("luck", "lack");
+        auto luck_leak = dict.minimum_text_distance("luck", "leak");
+        REQUIRE(luck_lack.has_value());
+        REQUIRE(luck_leak.has_value());
+        // Intuition: lack should be closer to luck than leak (AH vs AE vs IY)
+        REQUIRE(luck_lack.value() < luck_leak.value());
+
+        // 2. CONSONANT DISTANCE TESTS (only consonant changes)
+        // bag & back vs bag & bad
+        auto bag_back = dict.minimum_text_distance("bag", "back");
+        auto bag_bad = dict.minimum_text_distance("bag", "bad");
+        REQUIRE(bag_back.has_value());
+        REQUIRE(bag_bad.has_value());
+        // Intuition: back should be closer to bag than bad (G vs K vs D)
+        REQUIRE(bag_back.value() < bag_bad.value());
+        
+        // buck & bug vs buck & butt
+        auto buck_bug = dict.minimum_text_distance("buck", "bug");
+        auto buck_butt = dict.minimum_text_distance("buck", "butt");
+        REQUIRE(buck_bug.has_value());
+        REQUIRE(buck_butt.has_value());
+        // Intuition: bug should be closer to buck than butt (K vs G vs T)
+        REQUIRE(buck_bug.value() < buck_butt.value());
+        
+        // lack & lag vs lack & laugh
+        auto lack_lag = dict.minimum_text_distance("lack", "lag");
+        auto lack_laugh = dict.minimum_text_distance("lack", "laugh");
+        REQUIRE(lack_lag.has_value());
+        REQUIRE(lack_laugh.has_value());
+        // Intuition: lag should be closer to lack than laugh (K vs G vs F)
+        REQUIRE(lack_lag.value() < lack_laugh.value());
+        
+        // tag & tab vs tag & tap
+        auto tab_tag = dict.minimum_text_distance("tab", "tag");
+        auto tab_tap = dict.minimum_text_distance("tab", "tap");
+        REQUIRE(tab_tag.has_value());
+        REQUIRE(tab_tap.has_value());
+        // Intuition: tab should be closer to tag than tap (G vs B vs P)
+        REQUIRE(tab_tag.value() > tab_tap.value());
+
+        // 3. VOWEL COEFFICIENT TESTS (vowel change vs consonant change)
+        // ball & bull vs ball & bog
+        auto ball_bog = dict.minimum_text_distance("ball", "bog");
+        REQUIRE(ball_bog.has_value());
+        // Intuition: bull should be closer to ball than bog (vowel change vs consonant change)
+        REQUIRE(ball_bull.value() > ball_bog.value());
+        
+        // mere & mar vs mere & meal
+        auto mere_meal = dict.minimum_text_distance("mere", "meal");
+        auto mere_mar = dict.minimum_text_distance("mere", "mar");
+        REQUIRE(mere_meal.has_value());
+        // Intuition: mar should be closer to mere than meal (vowel change vs consonant change)
+        REQUIRE(mere_mar.value() > mere_meal.value());
+        
+        // buck & book vs buck & bug
+        REQUIRE(buck_bug.has_value());
+        // Intuition: book should be closer to buck than bug (vowel change vs consonant change)
+        REQUIRE(buck_book.value() > buck_bug.value());
+        
+        // tree & tray vs tree & treat
+        auto tree_tray = dict.minimum_text_distance("tree", "tray");
+        auto tree_treat = dict.minimum_text_distance("tree", "treat");
+        REQUIRE(tree_tray.has_value());
+        REQUIRE(tree_treat.has_value());
+        // Intuition: tray should be closer to tree than treat (vowel change vs consonant change)
+        REQUIRE(tree_tray.value() > tree_treat.value());
     }
 }

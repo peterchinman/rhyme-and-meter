@@ -126,15 +126,6 @@ public:
     Alignment_And_Distance minimum_alignmment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
     
     /**
-     * Takes two strings of text and finds the minimum alignment between all possible pronunciation combinations.
-     * 
-     * @param text1 (string): first text string to compare
-     * @param text2 (string): second text string to compare
-     * @return std::expected containing either the minimum alignment, or an error if any words failed to be identified
-    */
-    std::expected<Alignment_And_Distance, UnidentifiedWords> minimum_text_alignment(const std::string& text1, const std::string& text2);
-    
-    /**
      * Helper function that takes a text string and returns all possible pronunciation combinations.
      * 
      * @param text (string): text string to process
@@ -247,7 +238,7 @@ public:
      * @param text2 (string): second text string to compare
      * @return std::expected containing either the minimum alignment, or an error if any words failed to be identified
     */
-    std::expected<Alignment_And_Distance, UnidentifiedWords> minimum_text_alignment_generic(const std::string& text1, const std::string& text2);
+    std::expected<Alignment_And_Distance, UnidentifiedWords> minimum_text_alignment(const std::string& text1, const std::string& text2);
     
     /**
      *

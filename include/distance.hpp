@@ -14,11 +14,13 @@
 #include <algorithm>
 
 // FOR INSERTIONS AND DELETIONS
+// TODO: insertions/deletions of consonants should be cheaper than insertions/deletions of vowels. 
 inline int GAP_PENALTY() {
    return 10;
 }
 
-const int VOWEL_COEFFICIENT{2};
+// TODO: fine-tune this value
+const int VOWEL_COEFFICIENT{3};
 
 // TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches.
 inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {

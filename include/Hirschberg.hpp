@@ -102,17 +102,17 @@ std::vector<int> NWScore(const std::vector<std::string>& X, const std::vector<st
     //Step 1.1: first row penalties
     for (int j=1;j<=m;j++)
     {
-        Score[0][j] = Score[0][j-1] + GAP_PENALTY();
+        Score[0][j] = Score[0][j-1] + GAP_PENALTY(Y[j-1]);
     }
    
     for (int i=1; i<=n;i++)
     {
-        Score[1][0] = Score[0][0] + GAP_PENALTY();
+        Score[1][0] = Score[0][0] + GAP_PENALTY(X[i-1]);
         for (int j=1; j<=m;j++)
         {
             Score[1][j] = min3(
-                               Score[1][j-1] + GAP_PENALTY(),
-                               Score[0][j] + GAP_PENALTY(),
+                               Score[1][j-1] + GAP_PENALTY(Y[j-1]),
+                               Score[0][j] + GAP_PENALTY(X[i-1]),
                                Score[0][j-1] + SUBSTITUTION_SCORE(X[i-1], Y[j-1])
                                );
         }
@@ -145,11 +145,11 @@ Alignment_And_Distance NeedlemanWunsch (const std::vector<std::string>& X, const
     M[0][0] = 0;
     for (int i=1;i<n+1;i++)
     {
-        M[i][0] = M[i-1][0] + GAP_PENALTY();
+        M[i][0] = M[i-1][0] + GAP_PENALTY(X[i-1]);
     }
     for (int i=1;i<m+1;i++)
     {
-        M[0][i] = M[0][i-1] + GAP_PENALTY();
+        M[0][i] = M[0][i-1] + GAP_PENALTY(Y[i-1]);
     }
     
     //STEP 2: Needelman-Wunsch
@@ -158,8 +158,8 @@ Alignment_And_Distance NeedlemanWunsch (const std::vector<std::string>& X, const
         for (int j=1;j<m+1;j++)
         {
             M[i][j] = min3(M[i-1][j-1] + SUBSTITUTION_SCORE(X[i-1], Y[j-1]),
-                          M[i][j-1] + GAP_PENALTY(),
-                          M[i-1][j] + GAP_PENALTY());
+                          M[i][j-1] + GAP_PENALTY(Y[j-1]),
+                          M[i-1][j] + GAP_PENALTY(X[i-1]));
         }
     }
 
@@ -184,7 +184,7 @@ Alignment_And_Distance NeedlemanWunsch (const std::vector<std::string>& X, const
         }
 
         else if (i>0
-            && (M[i][j] == M[i-1][j] + GAP_PENALTY()))
+            && (M[i][j] == M[i-1][j] + GAP_PENALTY(X[i-1])))
         {
             A_1.insert(A_1.begin(), X[i-1]);
             A_2.insert(A_2.begin(), "-");
@@ -268,7 +268,7 @@ Alignment_And_Distance hirschberg(const std::vector<std::string>& X, const std::
         {
             ZWpair.first.emplace_back("-");
             ZWpair.second.emplace_back(Y[i-1]);
-            alignment_and_distance.distance += GAP_PENALTY();
+            alignment_and_distance.distance += GAP_PENALTY(Y[i-1]);
         }
         
     }
@@ -279,7 +279,7 @@ Alignment_And_Distance hirschberg(const std::vector<std::string>& X, const std::
         {
             ZWpair.first.emplace_back(X[i-1]);
             ZWpair.second.emplace_back("-");
-            alignment_and_distance.distance += GAP_PENALTY();
+            alignment_and_distance.distance += GAP_PENALTY(X[i-1]);
         }
     }
     

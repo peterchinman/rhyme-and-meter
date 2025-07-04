@@ -6,25 +6,33 @@
 
 namespace CONSTANTS{ 
 
-   const int VOWEL_TO_CONSONANT_MISMATCH = 30;
+   //  We never want to compare a vowel to a consonant, so we can give this an arbitrarily high penalty.
+   const int VOWEL_TO_CONSONANT_MISMATCH = 100;
 
    namespace VOWEL {
-      const int COEFFICIENT{3};
+      // All vowel distances get multiplied by this coefficient.
+      // Vowel distance ranges from 0-4, consonant distance range up to the CONSONANT::UNRELATED_PENALTY.
+      // Naive assumption would be to set the coefficient so that these ranges are roughly equal.
+      const int COEFFICIENT{5};
+
+      // Insertion/deletion penalty for vowels
       const int INDEL_PENALTY = 20;
 
+      // Penalty when comparing vowels with different stress
       const int STRESS_PENALTY = 1;
    }
 
    namespace CONSONANT {
-      const int INDEL_PENALTY = 10; 
-
-      // TIN, DIN
-      const int VOICED_PENALTY = 1;
+      // Insertion/deletion penalty for consonants
+      // This should be greater or equal to half of the CONSONANT::UNRELATED_PENALTY, otherwise it's cheaper to insert/delete a consonant than to compare consonants.
+      const int INDEL_PENALTY = 5; 
 
       // furthest related consonants are 7 apart
       // unrelated consonants should be... somewhat further than that??
-      // TODO: fine-tune this value
       const int UNRELATED_PENALTY = 10;
+
+      // TIN, DIN
+      const int VOICED_PENALTY = 1;
 
       // ROOT, LOOT
       const int R_L_DISTANCE = 1;
@@ -76,14 +84,14 @@ inline int SUBSTITUTION_SCORE(const std::string& s1, const std::string& s2) {
       if(v1 == v2 && stress1 != stress2) {
          // std::cout << "Same vowel but different stress." << std::endl;
 
-         return CONSTANTS::VOWEL::STRESS_PENALTY * CONSTANTS::VOWEL::COEFFICIENT;
+         return CONSTANTS::VOWEL::STRESS_PENALTY;
       }
       else {
          // Check vowel distance.
          VowelHexGraph::initialize();
          int vowel_distance{VowelHexGraph::get_distance(v1, v2)};
          if (stress1 != stress2) {
-            return (vowel_distance + CONSTANTS::VOWEL::STRESS_PENALTY) * CONSTANTS::VOWEL::COEFFICIENT;
+            return (vowel_distance * CONSTANTS::VOWEL::COEFFICIENT) + CONSTANTS::VOWEL::STRESS_PENALTY;
          }
          return vowel_distance * CONSTANTS::VOWEL::COEFFICIENT;
 

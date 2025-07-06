@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten/bind.h>
-#endif
-
 #include "distance.hpp"
 #include "convenience.hpp"
 #include "vowel_hex_graph.hpp"
@@ -18,7 +14,6 @@
  *
  * TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches, because "most" and "moats" are more similar than the double sub penalty would seem?
  *
- * TODO: Should take into account whether an insertion is a repetition of the same symbol and weight that less. For e.g. comparing "pulley" and "full lee", "lee" should be penalized less (or not at all) for repeating the /L/ symbol.
  *
  * @param phones1 (string): string of space-separated phones
  * @param phones2 (stinrg): string of space-separated phones
@@ -89,9 +84,3 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
 
     return prev[len2];
 }
-
-#ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(distance_functions) {
-   emscripten::function("levenshtein_distance", &levenshtein_distance);
-}
-#endif

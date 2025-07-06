@@ -1,7 +1,11 @@
+#pragma once
+
 /**
  * Adapted by Peter Chinman, in November 2024, to process vector<string>s instead of strings, allowing for sequence alignment of CMU Pronouncing Dictionary ARPABET symbols.
  * 
- * Also cleaned up code for pedantic compiler warnings, (e.g. std::size_t for int, vectors of vectors for variable length arrays)
+ * Also cleaned up code for pedantic compiler warnings, (e.g. std::size_t for int, vectors of vectors for variable length arrays).
+ * 
+ * Revised in July 2025 for dynamic insertion/deletion values. 
  * 
  * Uses externally defined functions SUBSTITUTION_SCORE() and GAP_SCORE() to evaluate scores.
  * 
@@ -22,8 +26,6 @@
  * - Hirschberg, D. S. (1975). A linear space algorithm for computing maximal common subsequences.
  *   Communications of the ACM, 18(6), 341–343.
  */
-
-#pragma once
 
 #include "distance.hpp"
 
@@ -373,28 +375,3 @@ Alignment_And_Distance hirschberg(const std::vector<std::string>& X, const std::
     }
     return alignment_and_distance;
 }
-
-
-#ifdef __EMSCRIPTEN__
-EMSCRIPTEN_BINDINGS(hirschberg) {
-
-    emscripten::register_vector<std::string>("StringVector");
-
-    // Bind the pair of vectors
-    emscripten::value_object<std::pair<std::vector<std::string>, std::vector<std::string>>>("StringVectorPair")
-        .field("first", &std::pair<std::vector<std::string>, std::vector<std::string>>::first)
-        .field("second", &std::pair<std::vector<std::string>, std::vector<std::string>>::second)
-    ;
-
-    // Bind the struct
-    emscripten::value_object<Alignment_And_Distance>("Alignment_And_Distance")
-        .field("ZWpair", &Alignment_And_Distance::ZWpair)
-        .field("distance", &Alignment_And_Distance::distance)
-    ;
-
-    // Bind the function
-    emscripten::function("hirschberg", &hirschberg);
-
-    
-}
-#endif

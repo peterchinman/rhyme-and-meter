@@ -433,6 +433,60 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         );
     }
 
+    SECTION("hirschberg_repeated_consonant_penalty") {
+        // Test 1: Basic repeated consonant detection
+        // "P UH1 L IY0" vs "F UH1 L L IY0" - "lee" has repeated L
+        std::vector<std::string> phones1 = {"P", "UH1", "L", "IY0"};  // "pulley"
+        std::vector<std::string> phones2 = {"P", "UH1", "L", "L", "IY0"}; // "pull lee" with repeated L
+        int distance_with_repetition = hirschberg(phones1, phones2).distance;
+        
+        std::vector<std::string> phones3 = {"F", "UH1", "L", "M", "IY0"}; // "full mee" with different consonant
+        int distance_without_repetition = hirschberg(phones1, phones3).distance;
+        
+        // Distance with repetition should be less than distance without repetition
+        REQUIRE(distance_with_repetition < distance_without_repetition);
+        
+        REQUIRE(distance_with_repetition == CONSTANTS::CONSONANT::REPEATED_CONSONANT_PENALTY);
+        
+        
+        // Test 3: Adjacent repetition only (not distant repetition)
+        // "K IH1 T" vs "K IH1 T T" - adjacent T repetition
+        std::vector<std::string> phones4 = {"K", "IH1", "T"};
+        std::vector<std::string> phones5 = {"K", "IH1", "T", "T"};
+        int adjacent_repetition_distance = hirschberg(phones4, phones5).distance;
+        
+        // "K IH1 T" vs "K IH1 T K T" - non-adjacent T repetition (K in between)
+        std::vector<std::string> phones6 = {"K", "IH1", "T", "K", "T"};
+        int non_adjacent_repetition_distance = hirschberg(phones4, phones6).distance;
+        
+        // Adjacent repetition should get reduced penalty, non-adjacent should not
+        REQUIRE(adjacent_repetition_distance == CONSTANTS::CONSONANT::REPEATED_CONSONANT_PENALTY);
+        REQUIRE(non_adjacent_repetition_distance == CONSTANTS::CONSONANT::INDEL_PENALTY * 2);
+        
+        // Test 4: Vowels should not get repetition penalty reduction
+        // "K IH1 T" vs "K IH1 IH1 T" - repeated vowel
+        std::vector<std::string> phones7 = {"K", "IH1", "IH1", "T"};
+        int vowel_repetition_distance = hirschberg(phones4, phones7).distance;
+        
+        // Vowel repetition should still cost full vowel penalty
+        REQUIRE(vowel_repetition_distance == CONSTANTS::VOWEL::INDEL_PENALTY);
+        
+        // Test 5: Repetition at boundaries
+        // "L IY0" vs "L L IY0" - repetition at start
+        std::vector<std::string> phones8 = {"L", "IY0"};
+        std::vector<std::string> phones9 = {"L", "L", "IY0"};
+        int start_repetition_distance = hirschberg(phones8, phones9).distance;
+        REQUIRE(start_repetition_distance == CONSTANTS::CONSONANT::REPEATED_CONSONANT_PENALTY);
+        
+        // Test 6: Multiple adjacent repetitions
+        // "K IH1 T" vs "K K IH1 T T" - multiple adjacent repetitions
+        std::vector<std::string> phones11 = {"K", "K", "IH1", "T", "T"};
+        int multiple_repetition_distance = hirschberg(phones4, phones11).distance;
+        
+        // Should get reduced penalty for both K and T repetitions
+        REQUIRE(multiple_repetition_distance == CONSTANTS::CONSONANT::REPEATED_CONSONANT_PENALTY * 2);
+    }
+
     SECTION("get_end_rhyme_distance") {
         std::string pulley = "I pulled the pulley";
         std::string bully = "which summoned by bully";

@@ -3,6 +3,7 @@
 #include "convenience.hpp"
 #include "consonant_distance.hpp"
 #include "vowel_hex_graph.hpp"
+#include <cstdlib>
 
 namespace CONSTANTS{ 
 
@@ -26,6 +27,8 @@ namespace CONSTANTS{
       // Insertion/deletion penalty for consonants
       // This should be greater or equal to half of the CONSONANT::UNRELATED_PENALTY, otherwise it's cheaper to insert/delete a consonant than to compare consonants.
       const int INDEL_PENALTY = 5; 
+
+      const int REPEATED_CONSONANT_PENALTY = 1;
 
       // furthest related consonants are 7 apart
       // unrelated consonants should be... somewhat further than that??
@@ -52,14 +55,23 @@ namespace CONSTANTS{
    }
 }
 
-// FOR INSERTIONS AND DELETIONS
+// FOR INSERTIONS AND DELETIONS WITH REPETITION DETECTION
 // Gap penalty varies based on whether we're inserting/deleting a vowel or consonant
-inline int GAP_PENALTY(const std::string& phoneme = "") {
+// and, if it's a consonant, if its a repetition of the prev consonant
+inline int GAP_PENALTY(const std::string& phoneme = "", const std::string& prev_phoneme = "") {
    if (phoneme.empty()) {
-      return CONSTANTS::CONSONANT::INDEL_PENALTY; // Default to consonant penalty
+      return CONSTANTS::CONSONANT::INDEL_PENALTY;
+   }
+
+   if (is_vowel(phoneme)) {
+      return CONSTANTS::VOWEL::INDEL_PENALTY;
+   }
+
+   if (phoneme == prev_phoneme) {
+      return CONSTANTS::CONSONANT::REPEATED_CONSONANT_PENALTY;
    }
    
-   return is_vowel(phoneme) ? CONSTANTS::VOWEL::INDEL_PENALTY : CONSTANTS::CONSONANT::INDEL_PENALTY;
+   return CONSTANTS::CONSONANT::INDEL_PENALTY;
 }
 
 // TODO: This should probably use Damerau distance, i.e. include transposition of adjacent elements in addition to insertions, deletions, and mismatches.

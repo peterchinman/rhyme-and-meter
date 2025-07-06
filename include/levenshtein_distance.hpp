@@ -70,12 +70,16 @@ inline int levenshtein_distance(const std::string& phones1, const std::string& p
         for (size_t j = 1; j <= len2; ++j) {
             // std::cout << "Comparing: " << symbols1[i-1];
             // std::cout << " and " << symbols2[j-1] << std::endl;
-            int mismatch_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1])};
+
+            // std::cout << "deletion penalty: " << GAP_PENALTY(symbols1.at(i-1), symbols2, j-1) << std::endl;
+            // std::cout << "insertion penalty: " << GAP_PENALTY(symbols2.at(j-1), symbols1, i-1) << std::endl;
+
+            int substitution_score{SUBSTITUTION_SCORE(symbols1[i-1], symbols2[j-1])};
 
             curr[j] = std::min({
-                prev[j] + GAP_PENALTY(symbols1.at(i-1)),      // Deletion of symbol from phones1
-                curr[j - 1] + GAP_PENALTY(symbols2.at(j-1)),  // Insertion of symbol from phones2
-               prev[j - 1] + mismatch_score // Substitution
+                prev[j] + GAP_PENALTY(symbols1.at(i-1), i > 1 ? symbols1.at(i-2) : ""),      // Deletion of symbol from phones1
+                curr[j - 1] + GAP_PENALTY(symbols2.at(j-1), j > 1 ? symbols2.at(j-2) : ""),  // Insertion of symbol from phones2
+               prev[j - 1] + substitution_score // Substitution
             });
 
             // std::cout << "Minimum: " << curr[j] << std::endl << std::endl << std::endl;

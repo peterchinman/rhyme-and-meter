@@ -485,31 +485,6 @@ int Rhyme_and_Meter::minimum_rhyme_distance(const std::pair<std::vector<std::str
     return minimum_distance;
 }
 
-Alignment_And_Distance Rhyme_and_Meter::minimum_alignment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations) {
-    Alignment_And_Distance minimum_alignment{};
-    bool first_flag{true};
-
-    std::vector<std::vector<std::string>> pronunciations1{};
-
-
-    for(const auto& p1 : pair_of_possible_pronunciations.first) {
-        for(const auto & p2 : pair_of_possible_pronunciations.second) {
-            Alignment_And_Distance pair_alignment = hirschberg(phones_string_to_vector(p1), phones_string_to_vector(p2));
-            if(first_flag) {
-                minimum_alignment = pair_alignment;
-                first_flag = false;
-            }
-            else {
-                if(pair_alignment.distance < minimum_alignment.distance){
-                    minimum_alignment = pair_alignment;
-                }
-            }
-        }
-    }
-
-    return minimum_alignment;
-}
-
 std::expected<std::vector<std::vector<std::string>>, Rhyme_and_Meter::UnidentifiedWords> 
 Rhyme_and_Meter::get_text_pronunciation_combinations(const std::string& text) {
     auto text_result = dict.text_to_phones(text);

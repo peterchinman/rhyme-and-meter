@@ -119,11 +119,6 @@ public:
      * @return the minimum weighted edit distance
     */
     int minimum_rhyme_distance(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
-
-    /**
-     * Uses hirschberg algorithm to get both an alignment that results in a minimum pronunciation distance between two strings of english text.
-     */
-    Alignment_And_Distance minimum_alignment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations);
     
     /**
      * Helper function that takes a text string and returns all possible pronunciation combinations.

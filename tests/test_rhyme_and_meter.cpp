@@ -390,7 +390,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(maybe_pronunciations2.has_value());
         auto pronunciations2 = maybe_pronunciations2.value();
 
-        auto alignment_and_distance(dict.minimum_alignmment(std::make_pair(pronunciations1, pronunciations2)));
+        auto alignment_and_distance(dict.minimum_alignment(std::make_pair(pronunciations1, pronunciations2)));
 
         REQUIRE(alignment_and_distance.distance == 
             ConsonantDistance::get_distance("K", "S")
@@ -410,7 +410,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(maybe_pronunciations2.has_value());
         auto pronunciations2 = maybe_pronunciations2.value();
 
-        auto alignment_and_distance(dict.minimum_alignmment(std::make_pair(pronunciations1, pronunciations2)));
+        auto alignment_and_distance(dict.minimum_alignment(std::make_pair(pronunciations1, pronunciations2)));
 
         REQUIRE(alignment_and_distance.distance == 
            CONSTANTS::CONSONANT::INDEL_PENALTY
@@ -426,7 +426,7 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
         REQUIRE(maybe_pronunciations4.has_value());
         auto pronunciations4 = maybe_pronunciations4.value();
 
-        auto alignment_and_distance2(dict.minimum_alignmment(std::make_pair(pronunciations3, pronunciations4)));
+        auto alignment_and_distance2(dict.minimum_alignment(std::make_pair(pronunciations3, pronunciations4)));
 
         REQUIRE(alignment_and_distance2.distance == 
            CONSTANTS::VOWEL::INDEL_PENALTY

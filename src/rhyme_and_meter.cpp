@@ -485,7 +485,7 @@ int Rhyme_and_Meter::minimum_rhyme_distance(const std::pair<std::vector<std::str
     return minimum_distance;
 }
 
-Alignment_And_Distance Rhyme_and_Meter::minimum_alignmment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations) {
+Alignment_And_Distance Rhyme_and_Meter::minimum_alignment(const std::pair<std::vector<std::string>, std::vector<std::string>>& pair_of_possible_pronunciations) {
     Alignment_And_Distance minimum_alignment{};
     bool first_flag{true};
 

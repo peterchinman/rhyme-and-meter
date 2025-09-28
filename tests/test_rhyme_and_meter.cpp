@@ -382,53 +382,38 @@ TEST_CASE_PERSISTENT_FIXTURE(Fixture, "Dictionary tests") {
     SECTION("hirschberg") {
         std::string word1 = "kitten";
         std::string word2 = "sitting";
-        auto maybe_pronunciations1{dict.word_to_phones(word1)};
-        REQUIRE(maybe_pronunciations1.has_value());
-        auto pronunciations1 = maybe_pronunciations1.value();
 
-        auto maybe_pronunciations2{dict.word_to_phones(word2)};
-        REQUIRE(maybe_pronunciations2.has_value());
-        auto pronunciations2 = maybe_pronunciations2.value();
+        auto alignment_result(dict.minimum_text_alignment(word1, word2));
+        REQUIRE(alignment_result.has_value());
+        auto alignment = alignment_result.value();
 
-        auto alignment_and_distance(dict.minimum_alignment(std::make_pair(pronunciations1, pronunciations2)));
-
-        REQUIRE(alignment_and_distance.distance == 
+        REQUIRE(alignment.distance == 
             ConsonantDistance::get_distance("K", "S")
             + VowelHexGraph::get_distance("AH", "IH") * CONSTANTS::VOWEL::COEFFICIENT
             + ConsonantDistance::get_distance("N", "NG")
         );
-        // REQUIRE(alignment_and_distance.ZWpair.first.);
     }
     SECTION("hirschberg_dynamic_gap_penalty") {
         std::string word1 = "eye";
         std::string word2 = "my";
-        auto maybe_pronunciations1{dict.word_to_phones(word1)};
-        REQUIRE(maybe_pronunciations1.has_value());
-        auto pronunciations1 = maybe_pronunciations1.value();
 
-        auto maybe_pronunciations2{dict.word_to_phones(word2)};
-        REQUIRE(maybe_pronunciations2.has_value());
-        auto pronunciations2 = maybe_pronunciations2.value();
+        auto alignment_result(dict.minimum_text_alignment(word1, word2));
+        REQUIRE(alignment_result.has_value());
+        auto alignment = alignment_result.value();
 
-        auto alignment_and_distance(dict.minimum_alignment(std::make_pair(pronunciations1, pronunciations2)));
-
-        REQUIRE(alignment_and_distance.distance == 
+        REQUIRE(alignment.distance == 
            CONSTANTS::CONSONANT::INDEL_PENALTY
         );
 
         std::string word3 = "eye";
         std::string word4 = "io";
-        auto maybe_pronunciations3{dict.word_to_phones(word3)};
-        REQUIRE(maybe_pronunciations3.has_value());
-        auto pronunciations3 = maybe_pronunciations3.value();
 
-        auto maybe_pronunciations4{dict.word_to_phones(word4)};
-        REQUIRE(maybe_pronunciations4.has_value());
-        auto pronunciations4 = maybe_pronunciations4.value();
+        auto alignment_result_2(dict.minimum_text_alignment(word3, word4));
+        REQUIRE (alignment_result_2.has_value());
+        
+        auto alignment_2 = alignment_result_2.value();
 
-        auto alignment_and_distance2(dict.minimum_alignment(std::make_pair(pronunciations3, pronunciations4)));
-
-        REQUIRE(alignment_and_distance2.distance == 
+        REQUIRE(alignment_2.distance == 
            CONSTANTS::VOWEL::INDEL_PENALTY
         );
     }

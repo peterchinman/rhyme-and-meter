@@ -27,21 +27,21 @@ else
     exit 1
 fi
 
-# Initial configuration (debug preset)
+# Initial configuration (v0 debug preset)
 echo ""
-echo "📋 Configuring debug build..."
-if cmake --preset debug; then
-    echo "✅ Debug preset configured"
+echo "📋 Configuring v0 debug build..."
+if cmake --preset v0-debug; then
+    echo "✅ V0 debug preset configured"
 else
-    echo "❌ Failed to configure debug preset"
+    echo "❌ Failed to configure v0 debug preset"
     exit 1
 fi
 
 # Create symlink to compile_commands.json for IntelliSense
 echo ""
 echo "📋 Setting up IntelliSense..."
-if [ -f "build/debug/compile_commands.json" ]; then
-    ln -sf build/debug/compile_commands.json compile_commands.json
+if [ -f "build/v0-debug/compile_commands.json" ]; then
+    ln -sf build/v0-debug/compile_commands.json compile_commands.json
     echo "✅ compile_commands.json symlink created"
 else
     echo "⚠️  compile_commands.json not found (will be created after first build)"
@@ -53,8 +53,10 @@ echo "✅ Development environment ready!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Quick commands:"
-echo "  Build:       cmake --build --preset debug"
-echo "  Test:        ctest --preset debug"
-echo "  Quick test:  ./scripts/test-quick.sh"
+echo "  Build v0:    cmake --build --preset v0-debug"
+echo "  Test v0:     ctest --preset v0-debug"
+echo "  Build v1:    cmake --build --preset v1-debug"
+echo "  Test v1:     ctest --preset v1-debug"
+echo "  Build both:  cmake --build --preset both-debug"
 echo ""
 

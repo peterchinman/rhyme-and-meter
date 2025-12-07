@@ -1,6 +1,14 @@
 # Rhyme and Meter
 
-A collection of C++ methods for checking validating poetic rhmye and meter. Compiled to WebAssembly and used in [Strictly](https://github.com/peterchinman/strictly), my rhyme and meter checker.
+A collection of C++ methods for checking validating poetic rhmye and meter.
+
+## Project Structure
+
+This repository contains both:
+- **v0**: The original stable version (in `v0/`)
+- **v1**: The refactored version (in `v1/`) - work in progress
+
+During the refactoring period, both versions can be built and tested independently.
 
 ## Intro
 
@@ -25,24 +33,38 @@ This will:
 - Set up pre-commit hooks (auto-runs tests before commits)
 - Make all scripts executable
 - Check for required dependencies
-- Configure the debug build
+- Configure the v0 debug build
 
 ### Native Build (using CMake Presets)
 
-The project uses modern CMake presets for standardized builds:
+The project uses modern CMake presets for standardized builds. You can build either v0, v1, or both.
 
-**Debug build:**
+**V0 (original) debug build:**
 ```bash
-cmake --preset debug
-cmake --build --preset debug
-ctest --preset debug
+cmake --preset v0-debug
+cmake --build --preset v0-debug
+ctest --preset v0-debug
 ```
 
-**Release build:**
+**V0 (original) release build:**
 ```bash
-cmake --preset release
-cmake --build --preset release
-ctest --preset release
+cmake --preset v0-release
+cmake --build --preset v0-release
+ctest --preset v0-release
+```
+
+**V1 (refactored) debug build:**
+```bash
+cmake --preset v1-debug
+cmake --build --preset v1-debug
+ctest --preset v1-debug
+```
+
+**Build both v0 and v1 together:**
+```bash
+cmake --preset both-debug
+cmake --build --preset both-debug
+ctest --preset both-debug
 ```
 
 **Quick test script:**
@@ -60,19 +82,19 @@ This will build the test executable and main applications. See `scripts/README.m
 
 ### WebAssembly Build (Emscripten)
 
-Compile to WebAssembly using [Emscripten](https://emscripten.org/docs/getting_started/downloads.html):
+Compile v0 to WebAssembly using [Emscripten](https://emscripten.org/docs/getting_started/downloads.html):
 
 **Configure:**
 ```bash
-emcmake cmake --preset emscripten
+emcmake cmake --preset emscripten-v0
 ```
 
 **Build:**
 ```bash
-emmake cmake --build --preset emscripten
+emmake cmake --build --preset emscripten-v0
 ```
 
-Output files will be in `build/emscripten/`.
+Output files will be in `build/emscripten-v0/`.
 
 This will generate `rhyme-and-meter.js`, `rhyme-and-meter.wasm`, and `rhyme-and-meter.data`. Using these you'll be able to call these methods directly from Javascript:
 - `Rhyme_and_Meter::check_syllable_validity()`

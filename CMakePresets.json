@@ -7,61 +7,120 @@
   },
   "configurePresets": [
     {
-      "name": "debug",
-      "displayName": "Debug Build",
-      "description": "Debug build with all symbols and no optimization",
-      "binaryDir": "${sourceDir}/build/debug",
+      "name": "v0-debug",
+      "displayName": "V0 Debug Build",
+      "description": "V0 debug build with all symbols and no optimization",
+      "binaryDir": "${sourceDir}/build/v0-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_V0": "ON",
+        "BUILD_V1": "OFF"
       }
     },
     {
-      "name": "release",
-      "displayName": "Release Build",
-      "description": "Optimized release build",
-      "binaryDir": "${sourceDir}/build/release",
+      "name": "v0-release",
+      "displayName": "V0 Release Build",
+      "description": "V0 optimized release build",
+      "binaryDir": "${sourceDir}/build/v0-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_V0": "ON",
+        "BUILD_V1": "OFF"
       }
     },
     {
-      "name": "relwithdebinfo",
-      "displayName": "Release with Debug Info",
-      "description": "Optimized build with debug symbols",
-      "binaryDir": "${sourceDir}/build/relwithdebinfo",
+      "name": "v1-debug",
+      "displayName": "V1 Debug Build",
+      "description": "V1 debug build with all symbols and no optimization",
+      "binaryDir": "${sourceDir}/build/v1-debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_V0": "OFF",
+        "BUILD_V1": "ON"
+      }
+    },
+    {
+      "name": "v1-release",
+      "displayName": "V1 Release Build",
+      "description": "V1 optimized release build",
+      "binaryDir": "${sourceDir}/build/v1-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_V0": "OFF",
+        "BUILD_V1": "ON"
+      }
+    },
+    {
+      "name": "both-debug",
+      "displayName": "Both V0 and V1 Debug Build",
+      "description": "Build both v0 and v1 in debug mode",
+      "binaryDir": "${sourceDir}/build/both-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_V0": "ON",
+        "BUILD_V1": "ON"
+      }
+    },
+    {
+      "name": "emscripten-v0",
+      "displayName": "V0 Emscripten WebAssembly Build",
+      "description": "Build v0 for WebAssembly using Emscripten",
+      "binaryDir": "${sourceDir}/build/emscripten-v0",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_V0": "ON",
+        "BUILD_V1": "OFF"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "debug",
-      "displayName": "Build Debug",
-      "configurePreset": "debug",
+      "name": "v0-debug",
+      "displayName": "Build V0 Debug",
+      "configurePreset": "v0-debug",
       "jobs": 4
     },
     {
-      "name": "release",
-      "displayName": "Build Release",
-      "configurePreset": "release",
+      "name": "v0-release",
+      "displayName": "Build V0 Release",
+      "configurePreset": "v0-release",
       "jobs": 4
     },
     {
-      "name": "relwithdebinfo",
-      "displayName": "Build RelWithDebInfo",
-      "configurePreset": "relwithdebinfo",
+      "name": "v1-debug",
+      "displayName": "Build V1 Debug",
+      "configurePreset": "v1-debug",
+      "jobs": 4
+    },
+    {
+      "name": "v1-release",
+      "displayName": "Build V1 Release",
+      "configurePreset": "v1-release",
+      "jobs": 4
+    },
+    {
+      "name": "both-debug",
+      "displayName": "Build Both V0 and V1 Debug",
+      "configurePreset": "both-debug",
+      "jobs": 4
+    },
+    {
+      "name": "emscripten-v0",
+      "displayName": "Build V0 Emscripten",
+      "configurePreset": "emscripten-v0",
       "jobs": 4
     }
   ],
   "testPresets": [
     {
-      "name": "debug",
-      "displayName": "Test Debug",
-      "configurePreset": "debug",
+      "name": "v0-debug",
+      "displayName": "Test V0 Debug",
+      "configurePreset": "v0-debug",
       "output": {
         "outputOnFailure": true
       },
@@ -71,9 +130,45 @@
       }
     },
     {
-      "name": "release",
-      "displayName": "Test Release",
-      "configurePreset": "release",
+      "name": "v0-release",
+      "displayName": "Test V0 Release",
+      "configurePreset": "v0-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": false
+      }
+    },
+    {
+      "name": "v1-debug",
+      "displayName": "Test V1 Debug",
+      "configurePreset": "v1-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": false
+      }
+    },
+    {
+      "name": "v1-release",
+      "displayName": "Test V1 Release",
+      "configurePreset": "v1-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": false
+      }
+    },
+    {
+      "name": "both-debug",
+      "displayName": "Test Both V0 and V1 Debug",
+      "configurePreset": "both-debug",
       "output": {
         "outputOnFailure": true
       },
@@ -84,4 +179,3 @@
     }
   ]
 }
-

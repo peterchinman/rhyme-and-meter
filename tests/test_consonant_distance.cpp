@@ -2,8 +2,6 @@
 #include "consonant_distance.hpp"
 #include "distance.hpp"
 
-#include <optional>
-
 struct ConsonantFixture {
     ConsonantFixture() {
         ConsonantDistance::initialize();

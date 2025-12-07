@@ -3,8 +3,6 @@
 #include "levenshtein_distance.hpp"
 #include "rhyme_and_meter.hpp"
 #include "vowel_hex_graph.hpp"
-#include <iostream>
-#include <filesystem>
 #include <string>
 #include <vector>
 #include <algorithm>

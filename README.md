@@ -12,65 +12,102 @@ The meter checking is a minimum validation that a certain meter could match a ce
 
 ## Build
 
-Includes my Phonetic library as a sub-module. Use:
-```
-git submodule update --init --recursive
-```
-to load load that library and CMU Pronouncing Dictionary data. 
+### Initial Setup
 
+This is a monorepo containing the rhyme-and-meter library, phonetic library, and CMU Pronouncing Dictionary data all in one place.
 
-You can use CMake to compile:
-
-```
-mkdir build
-cd build
-cmake ..
-make
+Run the development setup script:
+```bash
+./scripts/setup-dev.sh
 ```
 
-This will also build  `tests/tests` Catch-2 test file.
+This will:
+- Set up pre-commit hooks (auto-runs tests before commits)
+- Make all scripts executable
+- Check for required dependencies
+- Configure the debug build
 
-This can also be easily compiled to WebAssembly using [Emscripten](https://emscripten.org/docs/getting_started/downloads.html):
+### Native Build (using CMake Presets)
 
+The project uses modern CMake presets for standardized builds:
+
+**Debug build:**
+```bash
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
 ```
-mdkir build
-cd build
-emcmake cmake ..
-emmake make
+
+**Release build:**
+```bash
+cmake --preset release
+cmake --build --preset release
+ctest --preset release
 ```
 
-This will generate `rhyme-and-meter.js`, `rhyme-and-meter.wasm`, and `rhmye-and-meter.data`. Using these you'll be able to call these methods directly from Javascript:
+**Quick test script:**
+```bash
+./scripts/test-quick.sh          # Uses debug preset
+./scripts/test-quick.sh release  # Uses release preset
+```
+
+**Watch mode (auto-run tests on file changes):**
+```bash
+./scripts/watch-tests.sh         # Requires: brew install fswatch
+```
+
+This will build the test executable and main applications. See `scripts/README.md` for more workflow details.
+
+### WebAssembly Build (Emscripten)
+
+Compile to WebAssembly using [Emscripten](https://emscripten.org/docs/getting_started/downloads.html):
+
+**Configure:**
+```bash
+emcmake cmake --preset emscripten
+```
+
+**Build:**
+```bash
+emmake cmake --build --preset emscripten
+```
+
+Output files will be in `build/emscripten/`.
+
+This will generate `rhyme-and-meter.js`, `rhyme-and-meter.wasm`, and `rhyme-and-meter.data`. Using these you'll be able to call these methods directly from Javascript:
 - `Rhyme_and_Meter::check_syllable_validity()`
 - `Rhyme_and_Meter::check_meter_validity()`
 - `Rhyme_and_Meter::get_end_rhyme_distance()`
 - `levenshtein_distance()`
 
-(Note:`rhmye-and-meter.data` expects to be found in the root folder of your web project.)
+(Note: `rhyme-and-meter.data` expects to be found in the root folder of your web project.)
 
-To use these functions in Javascript you can do something like this:
+**JavaScript usage example:**
 
+```javascript
+// Initialize the WebAssembly module
+Module().then((Module) => {
+    console.log("module initialized")
+
+    // Create an instance of Rhyme_and_Meter class
+    rhyme_and_meter = new Module.Rhyme_and_Meter();
+    
+    const result_object = rhyme_and_meter.get_end_rhyme_distance(string1, string2);
+
+    if (result.is_valid) {
+        //blah blah blah
+    }
+    
+    // Or, for functions not in a class:
+    const distance = Module.levenshtein_distance(string1, string2);
+})
 ```
-    // Initialize the WebAssembly module
-    Module().then((Module) => {
-    	console.log("module initialized")
 
-    	// Create an instance of Rhyme_and_Meter class
-    	rhyme_and_meter = new Module.Rhyme_and_Meter();
-        
-    	const result_object = rhmye_and_meter.get_end_rhyme_distance(string1, string2);
+### Python Bindings
 
-        if (result.is_valid) {
-            //blah blah blah
-        }
-        
-        // Or, for functions not in a class:
-        const distance = Module.levenshtein_distance(string1, string2);
-    })
-```
+Thanks to @nwoods, this project also has Python bindings. From the project root directory run:
 
-Thanks to @nwoods, this project now also has python bindings. From the project root directory run:
-
-```
+```bash
 pip install .
 ```
 

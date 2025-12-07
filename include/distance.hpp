@@ -3,7 +3,6 @@
 #include "convenience.hpp"
 #include "consonant_distance.hpp"
 #include "vowel_hex_graph.hpp"
-#include <cstdlib>
 
 namespace CONSTANTS{ 
 

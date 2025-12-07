@@ -1,11 +1,21 @@
 .DS_Store
 .vscode/
+.cache/
 
+# Build directories
 build/
-build_wasm/
-data/
-
-
-/silent-letter-notes.md
+build-*/
 emscripten-build/
+
+# Data files (keep CMUdict but ignore other data)
+data/*
+!data/CMUdict/
+data/CMUdict/.git
+
+# Notes
+/silent-letter-notes.md
+
+# CMake generated files (symlink to build directory)
+compile_commands.json
+CMakeUserPresets.json
 

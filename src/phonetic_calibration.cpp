@@ -1,6 +1,4 @@
 #include "rhyme_and_meter.hpp"
-#include "vowel_hex_graph.hpp"
-#include "consonant_distance.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>

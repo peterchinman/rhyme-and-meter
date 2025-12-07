@@ -2,10 +2,6 @@
 
 #include "distance.hpp"
 #include "convenience.hpp"
-#include "vowel_hex_graph.hpp"
-#include "consonant_distance.hpp"
-
-#include <iostream>
 #include <vector>
 #include <algorithm>
 
